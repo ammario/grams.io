@@ -10,9 +10,11 @@ module.exports = {
       },
     },
     container: {
-      center: true,
       padding: '10rem',
     },
+    plugins: [
+      require('@tailwindcss/forms'),
+    ],
   },
   plugins: [],
 }
