@@ -18,3 +18,7 @@ button {
   @apply bg-red-500 px-2 hover:bg-red-700;
     max-width: 3em;
 }
+
+h2 {
+    font-size: 23px;
+}

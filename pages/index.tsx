@@ -11,7 +11,7 @@ interface ingestion {
 }
 
 const emptyIngestion: ingestion = {
-    offset: "",
+    offset: "0m",
     drugName: "",
     halfLife: "",
     dosage: "",
@@ -79,16 +79,19 @@ const Home: NextPage = () => {
                                         offset: e.target.value,
                                     })
                                 }} required/>
-                                <input type="text" id="name"
+                                <input type="text" id="drug-name" list="known-drugs"
                                        placeholder="Caffeine" value={ingestion.drugName} onChange={(e) => {
+                                    const knownHalfLife = knownDrugs[e.target.value]
                                     edit({
+                                        halfLife: knownHalfLife ? knownHalfLife : ingestion.halfLife,
                                         drugName: e.target.value,
                                     })
                                 }} required/>
+
                                 <input type="text" value={ingestion.dosage} placeholder="0mg" id="dosage"
                                        placeholder="50mg" required/>
                                 <input type="text" id="half-life"
-                                       placeholder="4.5h" required/>
+                                       placeholder="4.5h" value={ingestion.halfLife} required/>
                                 <button className="trash" onClick={() => {
                                     const copy = [...ingestions]
                                     copy.splice(index, 1)
@@ -98,6 +101,11 @@ const Home: NextPage = () => {
                         })
                     }
                 </form>
+                <datalist id="known-drugs">
+                    {
+                        Object.keys(knownDrugs).map(key => <option value={key}>{knownDrugs[key]}</option>)
+                    }
+                </datalist>
                 <div className={"py-4"}>
                     <button
                         className="" onClick={() => setIngestions([...ingestions, emptyIngestion])}>
@@ -107,6 +115,12 @@ const Home: NextPage = () => {
             </div>
         </div>
     )
+}
+
+const knownDrugs: Record<string, string> = {
+    "Amphetamine (Adderall)": "10h",
+    "Caffeine": "5h",
+    "LSD": "5.1h",
 }
 
 export default Home
