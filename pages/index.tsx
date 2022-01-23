@@ -125,12 +125,9 @@ const Home: NextPage = () => {
             },
         }} render={(b) => {
             b.create('point', [1, 4], {size: 4, name: 'A'});
-            // console.log(Object.keys(b))
-            // console.log("content", Object.keys(b.defaultAxes.y.label.content).sort())
-            // b.defaultAxes.y.label.content.setAttribute({rotate: 90})
             b.create('functiongraph', [
                     function (x) {
-                        return Math.sin(x);
+                        return 100/(Math.pow(2, (x/10)));
                     }, 0, 50,
                 ]
             );
