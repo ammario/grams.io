@@ -13,13 +13,17 @@ interface ingestion {
     drugName: string
     halfLife: string
     dosage: string
+    id: string
 }
 
-const emptyIngestion: ingestion = {
-    offset: "0min",
-    drugName: "",
-    halfLife: "",
-    dosage: "",
+const emptyIngestion = (): ingestion => {
+    return {
+        offset: "0min",
+        drugName: "",
+        halfLife: "",
+        dosage: "",
+        id: Math.random().toString(),
+    }
 }
 
 interface parsedIngestion {
@@ -103,34 +107,34 @@ const Home: NextPage = () => {
         console.log(router.query.toString())
         if (typeof window === "undefined") {
             // I have no idea how to grab URL params within a useState with NextJS.
-            return [emptyIngestion]
+            return [emptyIngestion()]
         }
 
         const params = new URLSearchParams(window.location.search);
         if (!params.has("ingestions")) {
-            return [emptyIngestion]
+            return [emptyIngestion()]
         }
         try {
-            const ingestions = JSON.parse(params.get("ingestions"))
+            const ingestions = JSON.parse(params.get("ingestions") as string)
             console.log(ingestions)
             return ingestions
         } catch (e) {
             console.log("oops at the url", e)
-            return [emptyIngestion]
+            return [emptyIngestion()]
         }
     })
 
     useEffect(() => {
-        router.query.ingestions = JSON.stringify(ingestions)
-        router.replace(router)
+        const url = {
+                query: {
+                    ingestions: ingestions.length > 0 ? JSON.stringify(ingestions) : "",
+                }
+            }
+        router.replace(url, undefined, {shallow: true})
+        console.log("new url", JSON.stringify(url))
     }, [ingestions])
 
     const graphData = useMemo((): JSX.Element => {
-        interface ingestionGraph {
-            ingestion: parsedIngestion
-            line: point[]
-        }
-
         const parsedIngestions = (ingestions.map((ingestion): parsedIngestion | undefined => {
             try {
                 const dosage = unit(ingestion.dosage).toNumeric('mg') as number
@@ -146,7 +150,7 @@ const Home: NextPage = () => {
                     offset: offset,
                 }
             } catch (e) {
-                console.log("parse exception", e)
+                console.log("recoverable ingestion parse exception", e)
                 return undefined
             }
         }).filter(v => v) as parsedIngestion[])
@@ -165,7 +169,7 @@ const Home: NextPage = () => {
                 mergedIngestions.set(ingestion.drugName, ingestion)
                 return
             }
-            const aLine = lines.get(ingestion.drugName)
+            const aLine = lines.get(ingestion.drugName) as point[]
             const bLine = plotIngestion(ingestion, graphEndpoint)
             console.log("a", aLine, "b", bLine)
             lines.set(
@@ -185,7 +189,7 @@ const Home: NextPage = () => {
                     <HorizontalGridLines/>
                     {
                         Array.from(lines, ([name, line]) => {
-                            return <LineSeries strokeWidth="2" color={drugColor.hex(name)} data={line} opacity={1}/>
+                            return <LineSeries color={drugColor.hex(name)} data={line} opacity={1}/>
                         })
                     }
                 </FlexibleWidthXYPlot>
@@ -194,6 +198,7 @@ const Home: NextPage = () => {
     }, [ingestions])
 
     if (typeof window === "undefined") {
+        console.error("no window?")
         return null
     }
 
@@ -217,15 +222,14 @@ const Home: NextPage = () => {
                         ingestions.map((ingestion, index) => {
                             function edit(editedIngestion: Partial<ingestion>) {
                                 const newIngestions = [...ingestions]
-                                const newIngestion = {
+                                newIngestions[index] = {
                                     ...ingestion,
                                     ...editedIngestion,
                                 }
-                                newIngestions[index] = newIngestion
                                 setIngestions(newIngestions)
                             }
 
-                            return <div key={index} className="ingest-container grid gap-4 py-1">
+                            return <div key={ingestion.id} className="ingest-container grid gap-4 py-1">
                                 <input type="text" id="offset"
                                        placeholder="0m"
                                        value={ingestion.offset} onChange={(e) => {
@@ -244,13 +248,14 @@ const Home: NextPage = () => {
                                 }} required/>
 
                                 <input type="text" value={ingestion.dosage} placeholder="0mg" id="dosage"
-                                       placeholder="50mg" onChange={e => edit({dosage: e.target.value})} required/>
+                                       onChange={e => edit({dosage: e.target.value})} required/>
                                 <input type="text" id="half-life"
                                        placeholder="4.5h" value={ingestion.halfLife}
                                        onChange={(e => edit({halfLife: e.target.value}))} required/>
                                 <button className="trash" onClick={() => {
                                     const copy = [...ingestions]
                                     copy.splice(index, 1)
+                                    console.log("trash", JSON.stringify(ingestions), JSON.stringify(copy))
                                     setIngestions(copy)
                                 }}><DeleteIcon/></button>
                             </div>
@@ -264,7 +269,7 @@ const Home: NextPage = () => {
                 </datalist>
                 <div className={"py-4"}>
                     <button
-                        className="" onClick={() => setIngestions([...ingestions, emptyIngestion])}>
+                        className="" onClick={() => setIngestions([...ingestions, emptyIngestion()])}>
                         Add ingestion
                     </button>
                 </div>

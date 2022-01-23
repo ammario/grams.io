@@ -24,6 +24,7 @@
     "react-vis": "^1.11.7"
   },
   "devDependencies": {
+    "@types/color-hash": "^1.0.2",
     "@types/node": "17.0.10",
     "@types/react": "17.0.38",
     "@types/react-vis": "^1.11.10",
