@@ -2,12 +2,11 @@ import type {NextPage} from 'next'
 import {useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/router";
 import DeleteIcon from '@mui/icons-material/Delete';
-import {FunctionPlotDatum, FunctionPlotOptions} from "function-plot/dist/types";
-import {unit} from "mathjs";
 // @ts-ignore
 import compile from "built-in-math-eval";
 // @ts-ignore
 import JSXGraph from "../components/JSXGraph";
+import jsxgraph from "jsxgraph";
 
 
 interface ingestion {
@@ -54,59 +53,89 @@ const Home: NextPage = () => {
     }, [ingestions])
 
 
-    // title=""
-    // grid={true}
-    // disableZoom={true}
-    // yAxis={{domain: [0, maxDosage * 1.1], label: "Sum of residuals (mg)"}}
-    // xAxis={{domain: [0, 24], label: "Time (hours)"}}
-    // data={
-    //     graphData
-    // }
-    const graphData: Omit<FunctionPlotOptions, "target"> = useMemo(() => {
-            let maxDosage = 0;
-            let maxTime = 0;
-            const data = ingestions.map((ingestion): FunctionPlotDatum | undefined => {
-                try {
-                    const dosage = unit(ingestion.dosage).toNumeric('mg') as number
-                    if (dosage > maxDosage) {
-                        maxDosage = dosage
-                    }
-                    const halfLife = unit(ingestion.halfLife).toNumber('hours') as number
-                    const offset = unit(ingestion.offset).toNumber('hours') as number
-                    const fn = dosage.toString() + "/(2^(x/" + halfLife.toString() + "))"
-                    for (let t = 1; t *= 1.3;) {
-                        const residuals = compile(fn).eval({x: t})
-                        if (residuals < 0.03 * dosage) {
-                            if (t > maxTime) {
-                                maxTime = t
-                            }
-                            break
-                        }
-                    }
-                    console.log("offset", offset)
-                    return {
-                        fnType: "linear",
-                        fn: fn,
-                        offset: [2000, 20],
-                        graphType: "polyline",
-                        closed: false,
-                    }
-                } catch (e) {
-                    console.log(e)
-                    return undefined
+    // const graphData: Omit<FunctionPlotOptions, "target"> = useMemo(() => {
+    //         let maxDosage = 0;
+    //         let maxTime = 0;
+    //         const data = ingestions.map((ingestion): FunctionPlotDatum | undefined => {
+    //             try {
+    //                 const dosage = unit(ingestion.dosage).toNumeric('mg') as number
+    //                 if (dosage > maxDosage) {
+    //                     maxDosage = dosage
+    //                 }
+    //                 const halfLife = unit(ingestion.halfLife).toNumber('hours') as number
+    //                 const offset = unit(ingestion.offset).toNumber('hours') as number
+    //                 const fn = dosage.toString() + "/(2^(x/" + halfLife.toString() + "))"
+    //                 for (let t = 1; t *= 1.3;) {
+    //                     const residuals = compile(fn).eval({x: t})
+    //                     if (residuals < 0.03 * dosage) {
+    //                         if (t > maxTime) {
+    //                             maxTime = t
+    //                         }
+    //                         break
+    //                     }
+    //                 }
+    //                 console.log("offset", offset)
+    //                 return {
+    //                     fnType: "linear",
+    //                     fn: fn,
+    //                     offset: [2000, 20],
+    //                     graphType: "polyline",
+    //                     closed: false,
+    //                 }
+    //             } catch (e) {
+    //                 console.log(e)
+    //                 return undefined
+    //             }
+    //
+    //         }).filter(e => e) as FunctionPlotDatum[]
+    //
+    //         return {
+    //             grid: true,
+    //             disableZoom: true,
+    //             yAxis: {domain: [0, maxDosage * 1.1], label: "Sum of residuals (mg)"},
+    //             xAxis: {domain: [0, maxTime], label: "Time (hours)"},
+    //             data: data,
+    //         }
+    //     }, [ingestions]
+    // )
+
+    const graphData = useMemo((): JSX.Element => {
+        return <JSXGraph attributes={{
+            boundingBox: [-5, 500, 50, -50],
+            axis: true,
+            showCopyright: false,
+            showNavigation: false,
+            defaultAxes: {
+                x: {
+                    name: 'Hours',
+                    withLabel: true,
+                    label: {
+                        position: "md",
+                        offset: [-20, -25],
+                    },
+                },
+                y: {
+                    name: 'Sum of residuals',
+                    withLabel: true,
+                    label: {
+                        position: "rt",
+                        offset: [5, -5],
+                    },
                 }
-
-            }).filter(e => e) as FunctionPlotDatum[]
-
-            return {
-                grid: true,
-                disableZoom: true,
-                yAxis: {domain: [0, maxDosage * 1.1], label: "Sum of residuals (mg)"},
-                xAxis: {domain: [0, maxTime], label: "Time (hours)"},
-                data: data,
-            }
-        }, [ingestions]
-    )
+            },
+        }} render={(b) => {
+            b.create('point', [1, 4], {size: 4, name: 'A'});
+            // console.log(Object.keys(b))
+            // console.log("content", Object.keys(b.defaultAxes.y.label.content).sort())
+            // b.defaultAxes.y.label.content.setAttribute({rotate: 90})
+            b.create('functiongraph', [
+                    function (x) {
+                        return Math.sin(x);
+                    }, 0, 50,
+                ]
+            );
+        }}/>
+    }, [ingestions])
 
     return (
         <div className="h-screen w-screen flex flex-col md:container md:mx-auto py-2 md:py-10">
@@ -181,11 +210,7 @@ const Home: NextPage = () => {
             </div>
             <div id="results" className="container py-4 px-0">
                 <h2>Results</h2>
-                <JSXGraph attributes={{
-                    boundingBox: [-10, 10, 20, -10],
-                }} render={(b) => {
-                    b.create('point',[1,4],{size:4,name:'A'});
-                }}/>
+                {graphData}
             </div>
         </div>
     )
