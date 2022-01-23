@@ -13,9 +13,40 @@ import {CopyAll} from "@mui/icons-material";
 interface ingestion {
     offset: string;
     drugName: string;
-    halfLife: string;
     dosage: string;
+    halfLife: string;
     id: string;
+}
+
+const urlDelimiter = "-"
+
+const encodeIngestionURL = (is: ingestion[]) => {
+    const params = new URLSearchParams()
+    is.forEach((i) => {
+        i.offset = i.offset.replace(urlDelimiter, "")
+        i.drugName = i.drugName.replace(urlDelimiter, "")
+        i.dosage = i.dosage.replace(urlDelimiter, "")
+        i.halfLife = i.halfLife.replace(urlDelimiter, "")
+        params.append(
+            "i",
+            `${i.offset}${urlDelimiter}${i.drugName}${urlDelimiter}${i.dosage}${urlDelimiter}${i.halfLife}`,
+            )
+    })
+    console.log("url encoded as", params.toString())
+    return params
+}
+
+const decodeIngestionURL = (params: URLSearchParams): ingestion[] => {
+    return params.getAll("i").map((v) => {
+        const tokens = v.split(urlDelimiter)
+        return {
+            offset: tokens[0],
+            drugName: tokens[1],
+            dosage: tokens[2],
+            halfLife: tokens[3],
+            id: Math.random().toString(),
+        }
+    })
 }
 
 const emptyIngestion = (): ingestion => {
@@ -112,28 +143,27 @@ const Home: NextPage = () => {
             return [emptyIngestion()];
         }
 
-        const params = new URLSearchParams(window.location.search);
-        if (!params.has("ingestions")) {
-            return [emptyIngestion()];
-        }
         try {
-            const ingestions = JSON.parse(params.get("ingestions") as string);
-            console.log(ingestions);
-            return ingestions;
-        } catch (e) {
+            const ingestions = decodeIngestionURL(new URLSearchParams(window.location.search))
+            console.log("ingestions from URL", ingestions);
+            return ingestions
+        }
+        catch (e) {
             console.log("oops at the url", e);
             return [emptyIngestion()];
         }
     });
 
     useEffect(() => {
-        const url = {
-            query: {
-                ingestions: ingestions.length > 0 ? JSON.stringify(ingestions) : "",
-            },
-        };
-        router.replace(url, undefined, {shallow: true});
-        console.log("new url", JSON.stringify(url));
+        try {
+            const url = {
+                query:  encodeIngestionURL(ingestions).toString(),
+            };
+            router.replace(url, undefined, {shallow: true});
+            console.log("new url", JSON.stringify(url));
+        } catch {
+            return
+        }
     }, [ingestions]);
 
     const [crosshair, setCrosshair] = useState<{
@@ -221,7 +251,7 @@ const Home: NextPage = () => {
             <div className="w-full h-2/3">
                 <div className={"flex max-w-fit"}>
                     <input checked={normalizeLines} onChange={(e) => {
-                        setNormalizeLines(e.target.checked )
+                        setNormalizeLines(e.target.checked)
                     }} type={"checkbox"}/> <span style={{fontSize: "10px"}}>Normalize dosages</span>
                 </div>
                 <FlexibleXYPlot margin={{left: 50}}>
@@ -276,7 +306,7 @@ const Home: NextPage = () => {
                                     console.log("starty", startDose);
                                     const residual = pt.y;
                                     const percentRemaining = Math.round(
-                                        ((residual*100) / startDose)).toPrecision(2);
+                                        ((residual * 100) / startDose)).toPrecision(2);
                                     return {
                                         title: crosshair[index].name,
                                         value: `${residual.toPrecision(
@@ -307,7 +337,8 @@ const Home: NextPage = () => {
                 </div>
             </div>
             <p className="tagline mt-3">
-                Calculate the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)#Half_life"}>rate of elimination</a> of a set of ingested drugs.
+                Calculate the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)#Half_life"}>rate of
+                elimination</a> of a set of ingested drugs.
 
             </p>
             <div id="ingestions" className="container pt-6 px-0">
@@ -318,93 +349,93 @@ const Home: NextPage = () => {
                     <span>Half-life</span>
                     <span> </span>
                 </div>
-                    {ingestions.map((ingestion, index) => {
-                        function edit(editedIngestion: Partial<ingestion>) {
-                            const newIngestions = [...ingestions];
-                            newIngestions[index] = {
-                                ...ingestion,
-                                ...editedIngestion,
-                            };
-                            setIngestions(newIngestions);
-                        }
+                {ingestions.map((ingestion, index) => {
+                    function edit(editedIngestion: Partial<ingestion>) {
+                        const newIngestions = [...ingestions];
+                        newIngestions[index] = {
+                            ...ingestion,
+                            ...editedIngestion,
+                        };
+                        setIngestions(newIngestions);
+                    }
 
-                        return (
-                            <div
-                                key={ingestion.id}
-                                className="ingest-container grid gap-4 py-1"
+                    return (
+                        <div
+                            key={ingestion.id}
+                            className="ingest-container grid gap-4 py-1"
+                        >
+                            <input
+                                type="text"
+                                id="offset"
+                                placeholder="0m"
+                                value={ingestion.offset}
+                                onChange={(e) => {
+                                    edit({
+                                        offset: e.target.value,
+                                    });
+                                }}
+                                required
+                            />
+                            <input
+                                type="text"
+                                id="drug-name"
+                                list="known-drugs"
+                                style={{
+                                    borderColor:
+                                        ingestion.drugName === ""
+                                            ? "rgba(0, 0, 0, 0.07)"
+                                            : drugColor.hex(ingestion.drugName),
+                                    borderWidth: "3px",
+                                }}
+                                placeholder="Caffeine"
+                                value={ingestion.drugName}
+                                onChange={(e) => {
+                                    const knownHalfLife = knownDrugs[e.target.value];
+                                    edit({
+                                        halfLife: knownHalfLife
+                                            ? knownHalfLife
+                                            : ingestion.halfLife,
+                                        drugName: e.target.value,
+                                    });
+                                }}
+                                required
+                            />
+
+                            <input
+                                type="text"
+                                value={ingestion.dosage}
+                                placeholder="0mg"
+                                id="dosage"
+                                onChange={(e) => edit({dosage: e.target.value})}
+                                required
+                            />
+                            <input
+                                type="text"
+                                id="half-life"
+                                placeholder="4.5h"
+                                value={ingestion.halfLife}
+                                onChange={(e) => edit({halfLife: e.target.value})}
+                                required
+                            />
+                            <button
+                                className="trash"
+                                tabIndex={-1}
+                                onClick={() => {
+                                    const copy = [...ingestions];
+                                    copy.splice(index, 1);
+                                    console.log(
+                                        "trash",
+                                        JSON.stringify(ingestions),
+                                        JSON.stringify(copy)
+                                    );
+                                    setIngestions(copy);
+                                }}
                             >
-                                <input
-                                    type="text"
-                                    id="offset"
-                                    placeholder="0m"
-                                    value={ingestion.offset}
-                                    onChange={(e) => {
-                                        edit({
-                                            offset: e.target.value,
-                                        });
-                                    }}
-                                    required
-                                />
-                                <input
-                                    type="text"
-                                    id="drug-name"
-                                    list="known-drugs"
-                                    style={{
-                                        borderColor:
-                                            ingestion.drugName === ""
-                                                ? "rgba(0, 0, 0, 0.07)"
-                                                : drugColor.hex(ingestion.drugName),
-                                        borderWidth: "3px",
-                                    }}
-                                    placeholder="Caffeine"
-                                    value={ingestion.drugName}
-                                    onChange={(e) => {
-                                        const knownHalfLife = knownDrugs[e.target.value];
-                                        edit({
-                                            halfLife: knownHalfLife
-                                                ? knownHalfLife
-                                                : ingestion.halfLife,
-                                            drugName: e.target.value,
-                                        });
-                                    }}
-                                    required
-                                />
-
-                                <input
-                                    type="text"
-                                    value={ingestion.dosage}
-                                    placeholder="0mg"
-                                    id="dosage"
-                                    onChange={(e) => edit({dosage: e.target.value})}
-                                    required
-                                />
-                                <input
-                                    type="text"
-                                    id="half-life"
-                                    placeholder="4.5h"
-                                    value={ingestion.halfLife}
-                                    onChange={(e) => edit({halfLife: e.target.value})}
-                                    required
-                                />
-                                <button
-                                    className="trash"
-                                    tabIndex={-1}
-                                    onClick={() => {
-                                        const copy = [...ingestions];
-                                        copy.splice(index, 1);
-                                        console.log(
-                                            "trash",
-                                            JSON.stringify(ingestions),
-                                            JSON.stringify(copy)
-                                        );
-                                        setIngestions(copy);
-                                    }}
-                                >
-                                    <DeleteIcon/>
-                                </button>
-                            </div>
-                        );
-                    })}
+                                <DeleteIcon/>
+                            </button>
+                        </div>
+                    );
+                })}
                 <datalist id="known-drugs">
                     {Object.keys(knownDrugs).map((key) => (
                         <option value={key}>{knownDrugs[key]}</option>
