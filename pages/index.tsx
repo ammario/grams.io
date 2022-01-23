@@ -250,10 +250,10 @@ const Home: NextPage = () => {
                                    }
                                    itemsFormat={(ps) => {
                                        return ps.map(
-                                           (point, index) => {
+                                           (pt, index) => {
                                                const startDose = startingDoses.get(crosshair[index].name) as number
                                                console.log("starty", startDose)
-                                               const residual = point.y
+                                               const residual = pt.y
                                                const percentRemaining = Math.round((residual / startDose).toPrecision(2) * 100)
                                                return {
                                                    title: crosshair[index].name,
