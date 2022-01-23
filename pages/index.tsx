@@ -2,11 +2,13 @@ import type {NextPage} from 'next'
 import {useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/router";
 import DeleteIcon from '@mui/icons-material/Delete';
-import FunctionPlot from "../components/FunctionPlot";
 import {FunctionPlotDatum, FunctionPlotOptions} from "function-plot/dist/types";
 import {unit} from "mathjs";
 // @ts-ignore
 import compile from "built-in-math-eval";
+// @ts-ignore
+import JSXGraph from "../components/JSXGraph";
+
 
 interface ingestion {
     offset: string
@@ -31,6 +33,7 @@ const Home: NextPage = () => {
             // I have no idea how to grab URL params within a useState with NextJS.
             return [emptyIngestion]
         }
+
         const params = new URLSearchParams(window.location.search);
         if (!params.has("ingestions")) {
             return [emptyIngestion]
@@ -49,6 +52,7 @@ const Home: NextPage = () => {
         router.query.ingestions = JSON.stringify(ingestions)
         router.replace(router)
     }, [ingestions])
+
 
     // title=""
     // grid={true}
@@ -177,7 +181,11 @@ const Home: NextPage = () => {
             </div>
             <div id="results" className="container py-4 px-0">
                 <h2>Results</h2>
-                <FunctionPlot {...graphData}/>
+                <JSXGraph attributes={{
+                    boundingBox: [-10, 10, 20, -10],
+                }} render={(b) => {
+                    b.create('point',[1,4],{size:4,name:'A'});
+                }}/>
             </div>
         </div>
     )
