@@ -290,7 +290,8 @@ const Home: NextPage = () => {
                 </div>
             </div>
             <p className="tagline mt-3">
-                Enter your ingestions below! Some explainer paragraph!
+                Calculate the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)#Half_life"}>rate of elimination</a> of a set of ingested drugs.
+
             </p>
             <div id="ingestions" className="container pt-6 px-0">
                 <div className={"ingest-container grid gap-4 mb-1"}>
@@ -300,7 +301,6 @@ const Home: NextPage = () => {
                     <span>Half-life</span>
                     <span> </span>
                 </div>
-                <form>
                     {ingestions.map((ingestion, index) => {
                         function edit(editedIngestion: Partial<ingestion>) {
                             const newIngestions = [...ingestions];
@@ -371,6 +371,7 @@ const Home: NextPage = () => {
                                 />
                                 <button
                                     className="trash"
+                                    tabIndex={-1}
                                     onClick={() => {
                                         const copy = [...ingestions];
                                         copy.splice(index, 1);
@@ -387,7 +388,6 @@ const Home: NextPage = () => {
                             </div>
                         );
                     })}
-                </form>
                 <datalist id="known-drugs">
                     {Object.keys(knownDrugs).map((key) => (
                         <option value={key}>{knownDrugs[key]}</option>
@@ -406,12 +406,15 @@ const Home: NextPage = () => {
                         navigator.clipboard.writeText(window.location.toString())
                     }}>
                         <CopyAll className="mr-1"/>
-                        Share
+                        Copy URL
                     </button>
                 </div>
             </div>
             <div id="results" className="container py-2 px-0 flex-1 flex flex-col">
-                <h2>Results</h2>
+                <div className="flex">
+                    <h2>Results</h2>
+                    <input type="checkbox">Normalize to percentages</input>
+                </div>
                 <hr className="mb-4 mt-1"/>
                 {graphData}
             </div>
@@ -425,18 +428,15 @@ const Home: NextPage = () => {
 };
 
 const knownDrugs: Record<string, string> = {
-    Amphetamine: "10h",
-    Caffeine: "5h",
-    LSD: "5.1h",
-    Alprazolam: "12h",
-    Amphetamine: "10h",
-    Atorvastatin: "7h",
-    Caffeine: "5h",
-    Hydrocodone: "3.8h",
-    LSD: "5.1h",
-    Metaprolol: "3.5h",
-    Gabapentin: "6h",
-    Sertraline: "26h",
+    "Amphetamine": "10h",
+    "Caffeine": "5h",
+    "LSD": "5.1h",
+    "Alprazolam": "12h",
+    "Atorvastatin": "7h",
+    "Hydrocodone": "3.8h",
+    "Metaprolol": "3.5h",
+    "Gabapentin": "6h",
+    "Sertraline": "26h",
 
 };
 
