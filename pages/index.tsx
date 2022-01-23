@@ -250,11 +250,11 @@ const Home: NextPage = () => {
                                    }
                                    itemsFormat={(ps) => {
                                        return ps.map(
-                                           (pt, index) => {
+                                           (pt: point, index: number) => {
                                                const startDose = startingDoses.get(crosshair[index].name) as number
                                                console.log("starty", startDose)
                                                const residual = pt.y
-                                               const percentRemaining = Math.round((residual / startDose).toPrecision(2) * 100)
+                                               const percentRemaining = (Math.round((residual / startDose) * 100).toPrecision(2))
                                                return {
                                                    title: crosshair[index].name,
                                                    value: `${residual.toPrecision(3)}mg (${percentRemaining}%)`,
@@ -337,7 +337,7 @@ const Home: NextPage = () => {
                 </form>
                 <datalist id="known-drugs">
                     {
-                        Object.keys(knownDrugs).map(key => <option value={key}>{knownDrugs[key]}</option>)
+                        Object.keys(knownDrugs).map(key => <option key={key} value={key}>{knownDrugs[key]}</option>)
                     }
                 </datalist>
                 <div className={"py-4"}>
