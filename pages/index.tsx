@@ -181,7 +181,12 @@ const Home: NextPage = () => {
         return startingDoses;
     }, [parsedIngestions]);
 
+
+    const [normalizeLines, setNormalizeLines] = useState(false)
+
     const graphData = useMemo((): JSX.Element => {
+
+        console.log("normalize dosages?", normalizeLines)
         const mergedIngestions = new Map<string, parsedIngestion>([]);
         const lines = new Map<string, point[]>([]);
 
@@ -202,10 +207,23 @@ const Home: NextPage = () => {
             lines.set(ingestion.drugName, mergeLines(aLine, bLine));
         });
 
-        console.log("lines", lines);
+        const normalizedLines = new Map<string, point[]>([])
+        Array.from(lines).forEach(([name, points]) => {
+            normalizedLines.set(name, points.map((ps) => {
+                return {
+                    x: ps.x,
+                    y: ps.y / startingDoses.get(name)!,
+                }
+            }))
+        })
 
         return (
             <div className="w-full h-2/3">
+                <div className={"flex max-w-fit"}>
+                    <input checked={normalizeLines} onChange={(e) => {
+                        setNormalizeLines(e.target.checked )
+                    }} type={"checkbox"}/> <span style={{fontSize: "10px"}}>Normalize dosages</span>
+                </div>
                 <FlexibleXYPlot margin={{left: 50}}>
                     <XAxis title={"Time"} tickFormat={(v) => `${v}h`}/>
                     <YAxis title={"Residuals (mg)"}/>
@@ -232,7 +250,7 @@ const Home: NextPage = () => {
                                     );
                                 }}
                                 color={drugColor.hex(name)}
-                                data={line}
+                                data={normalizeLines ? normalizedLines.get(name) : line}
                                 opacity={1}
                             />
                         );
@@ -251,15 +269,14 @@ const Home: NextPage = () => {
                                 return {title: "Time", value: `${ps[0].x}h`};
                             }}
                             itemsFormat={(ps) => {
-                                return ps.map((point, index) => {
+                                return ps.map((pt: point, index: number) => {
                                     const startDose = startingDoses.get(
                                         crosshair[index].name
                                     ) as number;
                                     console.log("starty", startDose);
-                                    const residual = point.y;
+                                    const residual = pt.y;
                                     const percentRemaining = Math.round(
-                                        (residual / startDose).toPrecision(2) * 100
-                                    );
+                                        ((residual*100) / startDose)).toPrecision(2);
                                     return {
                                         title: crosshair[index].name,
                                         value: `${residual.toPrecision(
@@ -273,7 +290,7 @@ const Home: NextPage = () => {
                 </FlexibleXYPlot>
             </div>
         );
-    }, [parsedIngestions, crosshair, startingDoses]);
+    }, [parsedIngestions, crosshair, startingDoses, normalizeLines]);
 
     if (typeof window === "undefined") {
         console.error("no window?");
@@ -286,7 +303,7 @@ const Home: NextPage = () => {
                 <Image width="48px" height="48px" src={"/icon.svg"}></Image>
                 <div className="ml-3">
                     <h1>grams.io</h1>
-                    <p>Half-life calculator</p>
+                    <p>Drug half-life elimination calculator</p>
                 </div>
             </div>
             <p className="tagline mt-3">
@@ -413,7 +430,6 @@ const Home: NextPage = () => {
             <div id="results" className="container py-2 px-0 flex-1 flex flex-col">
                 <div className="flex">
                     <h2>Results</h2>
-                    <input type="checkbox">Normalize to percentages</input>
                 </div>
                 <hr className="mb-4 mt-1"/>
                 {graphData}
