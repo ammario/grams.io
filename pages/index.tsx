@@ -30,7 +30,7 @@ const encodeIngestionURL = (is: ingestion[]) => {
         params.append(
             "i",
             `${i.offset}${urlDelimiter}${i.drugName}${urlDelimiter}${i.dosage}${urlDelimiter}${i.halfLife}`,
-            )
+        )
     })
     console.log("url encoded as", params.toString())
     return params
@@ -147,8 +147,7 @@ const Home: NextPage = () => {
             const ingestions = decodeIngestionURL(new URLSearchParams(window.location.search))
             console.log("ingestions from URL", ingestions);
             return ingestions
-        }
-        catch (e) {
+        } catch (e) {
             console.log("oops at the url", e);
             return [emptyIngestion()];
         }
@@ -157,7 +156,7 @@ const Home: NextPage = () => {
     useEffect(() => {
         try {
             const url = {
-                query:  encodeIngestionURL(ingestions).toString(),
+                query: encodeIngestionURL(ingestions).toString(),
             };
             router.replace(url, undefined, {shallow: true});
             console.log("new url", JSON.stringify(url));
@@ -172,25 +171,35 @@ const Home: NextPage = () => {
         name: string;
     }[]>();
 
+    const tryParseUnit = (v: string, u: string): number => {
+       try {
+           return unit(v).toNumber(u)
+       } catch {
+           return parseFloat(v)
+       }
+    }
+
+    const parseIngestion = (i: ingestion): parsedIngestion => {
+        const dosage = tryParseUnit(i.dosage, "mg")
+        const halfLife = tryParseUnit(i.halfLife, "hours")
+        if (halfLife > 30 * 30) {
+            throw "Half life is too long (the application will crash!)";
+        }
+        const offset = tryParseUnit(i.offset, "hours")
+        return {
+            drugName: i.drugName,
+            dosage: dosage,
+            halfLife: halfLife,
+            offset: offset,
+        };
+    }
+
     const parsedIngestions = useMemo(
         () =>
             ingestions
                 .map((ingestion): parsedIngestion | undefined => {
                     try {
-                        const dosage = unit(ingestion.dosage).toNumeric("mg") as number;
-                        const halfLife = unit(ingestion.halfLife).toNumber(
-                            "hours"
-                        ) as number;
-                        const offset = unit(ingestion.offset).toNumber("hours") as number;
-                        if (halfLife > 30 * 30) {
-                            throw "Half life is too long (the application will crash!)";
-                        }
-                        return {
-                            drugName: ingestion.drugName,
-                            dosage: dosage,
-                            halfLife: halfLife,
-                            offset: offset,
-                        };
+                        return parseIngestion(ingestion)
                     } catch (e) {
                         console.log("recoverable ingestion parse exception", e);
                         return undefined;
@@ -340,7 +349,8 @@ const Home: NextPage = () => {
             </div>
             <p className="tagline mt-3">
                 Calculate the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)#Half_life"}>rate of
-                elimination</a> of a set of ingested drugs. <a href={"/?i=0min-Caffeine-80mg-5h&i=1hr-Caffeine-80mg-5h&i=2hr-Amphetamine-30mg-10h"}>(Example)</a>
+                elimination</a> of a set of ingested drugs. <a
+                href={"/?i=0min-Caffeine-80mg-5h&i=1hr-Caffeine-80mg-5h&i=2hr-Amphetamine-30mg-10h"}>(Example)</a>
             </p>
             <div id="ingestions" className="container pt-6 px-0">
                 <div className={"ingest-container grid gap-4 mb-1"}>
@@ -467,7 +477,7 @@ const Home: NextPage = () => {
                 {graphData}
             </div>
             <div className="mt-auto text-center text-md">
-                <a rel="noreferrer"  href="email:contact@grams.io" target="_blank">
+                <a rel="noreferrer" href="email:contact@grams.io" target="_blank">
                     contact@grams.io
                 </a>
             </div>
