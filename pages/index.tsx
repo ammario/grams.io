@@ -437,7 +437,7 @@ const Home: NextPage = () => {
                 })}
                 <datalist id="known-drugs">
                     {Object.keys(knownDrugs).map((key) => (
-                        <option value={key}>{knownDrugs[key]}</option>
+                        <option key={key} value={key}>{knownDrugs[key]}</option>
                     ))}
                 </datalist>
                 <div className={"flex justify-between py-4"}>
@@ -465,7 +465,7 @@ const Home: NextPage = () => {
                 {graphData}
             </div>
             <div className="mt-auto text-center text-md">
-                <a href="email:contact@grams.io" target="_blank">
+                <a rel="noreferrer"  href="email:contact@grams.io" target="_blank">
                     contact@grams.io
                 </a>
             </div>
