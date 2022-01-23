@@ -22,3 +22,7 @@ button {
 h2 {
     font-size: 23px;
 }
+
+th {
+    text-align: left;
+}
