@@ -15,6 +15,7 @@ import {
 } from 'react-vis';
 import {unit} from 'mathjs';
 import ColorHash from 'color-hash';
+import Image from "next/image";
 
 
 interface ingestion {
@@ -276,7 +277,7 @@ const Home: NextPage = () => {
 
     return (
         <div className="h-screen w-screen flex flex-col md:container md:mx-auto py-2 md:py-10">
-            <title>grams.io drug half-life calculator</title>
+            <Image width="48px" height="48px" src={"/icon.svg"}></Image>
             <h1>grams.io</h1>
             <hr/>
             <div id="ingestions" className="container py-4 px-0">
