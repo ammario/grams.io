@@ -349,8 +349,8 @@ const Home: NextPage = () => {
                 </div>
             </div>
             <p className="tagline mt-3">
-                Calculate the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)#Half_life"}>rate of
-                elimination</a> of a set of ingested drugs. <a
+                Show the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
+                elimination</a> timeline of a set of ingested drugs. <a
                 href={"/?i=1h-Caffeine-80000ug-5h&i=2h-Amphetamine-30mg-600min&i=3h-Caffeine-100mg-5h"}>(Example)</a>
             </p>
             <div id="ingestions" className="container pt-6 px-0">
