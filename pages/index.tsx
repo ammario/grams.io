@@ -330,7 +330,9 @@ const Home: NextPage = () => {
     return (
         <div className="h-screen w-screen flex flex-col md:container md:mx-auto p-3 md:py-10">
             <div className="flex items-center mb-2">
-                <Image width="48px" height="48px" src={"/icon.svg"}></Image>
+                <a href="/">
+                    <Image width="48px" height="48px" src={"/icon.svg"}></Image>
+                </a>
                 <div className="ml-3">
                     <h1>grams.io</h1>
                     <p>Drug half-life elimination calculator</p>
