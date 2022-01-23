@@ -26,3 +26,10 @@ h2 {
 th {
     text-align: left;
 }
+
+.crosshair {
+    background-color: #323232;
+    color: white;
+    opacity: 0.5;
+    border-color: black;
+}

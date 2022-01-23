@@ -3,7 +3,16 @@ import {useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/router";
 import DeleteIcon from '@mui/icons-material/Delete';
 import '../node_modules/react-vis/dist/style.css';
-import {FlexibleWidthXYPlot, HorizontalGridLines, LineSeries, VerticalGridLines, XAxis, YAxis} from 'react-vis';
+import {
+    Crosshair,
+    FlexibleWidthXYPlot,
+    HorizontalGridLines,
+    LabelSeries,
+    LineSeries,
+    VerticalGridLines,
+    XAxis,
+    YAxis
+} from 'react-vis';
 import {unit} from 'mathjs';
 import ColorHash from 'color-hash';
 
@@ -126,16 +135,22 @@ const Home: NextPage = () => {
 
     useEffect(() => {
         const url = {
-                query: {
-                    ingestions: ingestions.length > 0 ? JSON.stringify(ingestions) : "",
-                }
+            query: {
+                ingestions: ingestions.length > 0 ? JSON.stringify(ingestions) : "",
             }
+        }
         router.replace(url, undefined, {shallow: true})
         console.log("new url", JSON.stringify(url))
     }, [ingestions])
 
-    const graphData = useMemo((): JSX.Element => {
-        const parsedIngestions = (ingestions.map((ingestion): parsedIngestion | undefined => {
+    const [crosshair, setCrosshair] = useState<{
+        x: number;
+        y: number;
+        name: string;
+    }[]>();
+
+    const parsedIngestions = useMemo(() => (
+        ingestions.map((ingestion): parsedIngestion | undefined => {
             try {
                 const dosage = unit(ingestion.dosage).toNumeric('mg') as number
                 const halfLife = unit(ingestion.halfLife).toNumber('hours') as number
@@ -153,15 +168,29 @@ const Home: NextPage = () => {
                 console.log("recoverable ingestion parse exception", e)
                 return undefined
             }
-        }).filter(v => v) as parsedIngestion[])
+        }).filter(v => v) as parsedIngestion[]
+    ), [ingestions])
 
+    const startingDoses = useMemo(() => {
+        const startingDoses = new Map<string, number>()
+        parsedIngestions.forEach((ingestion) => {
+            const existingDose = startingDoses.get(ingestion.drugName) || 0
+            const newDose = existingDose+ingestion.dosage
+            startingDoses.set(ingestion.drugName, newDose)
+            console.log("set starting dose", ingestion.drugName, newDose)
+        })
+        return startingDoses
+    }, [parsedIngestions])
+
+
+    const graphData = useMemo((): JSX.Element => {
         const mergedIngestions = new Map<string, parsedIngestion>([])
         const lines = new Map<string, point[]>([])
 
         // Find maximum graph endpoint so all lines have equal resolution.
         const graphEndpoint = parsedIngestions.map(
             (i) => ingestionEndpoint(i)
-        ).reduce((a, b) =>  Math.max(a, b), 0)
+        ).reduce((a, b) => Math.max(a, b), 0)
 
         parsedIngestions.forEach((ingestion) => {
             if (!mergedIngestions.has(ingestion.drugName)) {
@@ -182,20 +211,63 @@ const Home: NextPage = () => {
 
         return (
             <div className="App">
-                <FlexibleWidthXYPlot margin={{left: 75}} height={300}>
-                    <XAxis title={"Hours"} tickFormat={v => `${v}h`}/>
+                <FlexibleWidthXYPlot
+                    margin={{left: 75}} height={300}
+                >
+                    <XAxis title={"Time"} tickFormat={v => `${v}h`}/>
                     <YAxis title={"Residuals (mg)"}/>
                     <VerticalGridLines/>
                     <HorizontalGridLines/>
                     {
-                        Array.from(lines, ([name, line]) => {
-                            return <LineSeries color={drugColor.hex(name)} data={line} opacity={1}/>
+                        Array.from(lines, ([name, line], k) => {
+                            return <LineSeries
+                                onNearestX={(e, {index}) => {
+                                    // The first line is responsible for setting the cross for every line.
+                                    if (k > 0) {
+                                        return
+                                    }
+
+                                    setCrosshair(Array.from(lines).map(([name, line]) => {
+                                        // Each line is guaranteed to have a point at the same index.
+                                        return {
+                                            x: e.x,
+                                            y: line[index].y,
+                                            name: name,
+                                        }
+                                    }))
+                                }}
+                                color={drugColor.hex(name)} data={line} opacity={1}/>
                         })
+                    }
+                    {
+                        typeof crosshair !== "undefined" &&
+                        <Crosshair values={crosshair}
+                                   titleFormat={(ps) => {
+                                       console.log(ps)
+                                       return {title: "Time", value: `${ps[0].x}h`}
+                                   }
+                                   }
+                                   itemsFormat={(ps) => {
+                                       return ps.map(
+                                           (point, index) => {
+                                               const startDose = startingDoses.get(crosshair[index].name) as number
+                                               console.log("starty", startDose)
+                                               const residual = point.y
+                                               const percentRemaining = Math.round((residual / startDose).toPrecision(2) * 100)
+                                               return {
+                                                   title: crosshair[index].name,
+                                                   value: `${residual.toPrecision(3)}mg (${percentRemaining}%)`,
+                                               }
+                                           },
+                                       )
+                                   }
+                                   }
+                        />
                     }
                 </FlexibleWidthXYPlot>
             </div>
         );
-    }, [ingestions])
+    }, [parsedIngestions, crosshair, startingDoses])
 
     if (typeof window === "undefined") {
         console.error("no window?")
@@ -283,7 +355,7 @@ const Home: NextPage = () => {
 }
 
 const knownDrugs: Record<string, string> = {
-    "Amphetamine (Adderall)": "10h",
+    "Amphetamine": "10h",
     "Caffeine": "5h",
     "LSD": "5.1h",
 }
