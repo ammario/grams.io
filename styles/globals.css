@@ -7,7 +7,7 @@ input, select {
 }
 
 .ingest-container {
-    grid-template-columns: 0.2fr 0.5fr 0.2fr 0.5fr 0.2fr 0.1fr;
+    grid-template-columns: 0.2fr 0.5fr 0.5fr 0.2fr 0.1fr;
 }
 
 button {

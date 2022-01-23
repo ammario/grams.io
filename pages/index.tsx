@@ -2,11 +2,10 @@ import type {NextPage} from 'next'
 import {useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/router";
 import DeleteIcon from '@mui/icons-material/Delete';
-// @ts-ignore
-import compile from "built-in-math-eval";
-// @ts-ignore
-import JSXGraph from "../components/JSXGraph";
-import jsxgraph from "jsxgraph";
+import '../node_modules/react-vis/dist/style.css';
+import {AreaSeries, FlexibleWidthXYPlot, HorizontalGridLines, VerticalGridLines, XAxis, XYPlot, YAxis} from 'react-vis';
+import {unit} from 'mathjs';
+import ColorHash from 'color-hash';
 
 
 interface ingestion {
@@ -17,11 +16,39 @@ interface ingestion {
 }
 
 const emptyIngestion: ingestion = {
-    offset: "0m",
+    offset: "0min",
     drugName: "",
     halfLife: "",
     dosage: "",
 }
+
+interface parsedIngestion {
+    offset: number
+    drugName: string
+    halfLife: number
+    dosage: number
+}
+
+interface point {
+    x: number
+    y: number
+}
+
+// plotIngestion returns 1000 points representing the metabolism of the ingestion.
+const plotIngestion = (i: parsedIngestion): point[] => {
+    // The amount of hours by which less than 1/33 of the original dose is present.
+    const endTime = i.halfLife * Math.log2(33)
+    let points: point[] = [];
+    for (let x = 0; x <= endTime; x += (endTime / 50)) {
+        points.push({
+            x: x,
+            y: i.dosage / Math.pow(2, (x / i.halfLife)),
+        })
+    }
+    return points
+}
+
+const drugColor = new ColorHash()
 
 const Home: NextPage = () => {
     const router = useRouter()
@@ -100,38 +127,41 @@ const Home: NextPage = () => {
     // )
 
     const graphData = useMemo((): JSX.Element => {
-        return <JSXGraph attributes={{
-            boundingBox: [-5, 500, 50, -50],
-            axis: true,
-            showCopyright: false,
-            showNavigation: false,
-            defaultAxes: {
-                x: {
-                    name: 'Hours',
-                    withLabel: true,
-                    label: {
-                        position: "md",
-                        offset: [-20, -25],
-                    },
-                },
-                y: {
-                    name: 'Sum of residuals',
-                    withLabel: true,
-                    label: {
-                        position: "rt",
-                        offset: [5, -5],
-                    },
+        const parsedIngestions = ingestions.map((ingestion): parsedIngestion | undefined => {
+            try {
+                const dosage = unit(ingestion.dosage).toNumeric('mg') as number
+                const halfLife = unit(ingestion.halfLife).toNumber('hours') as number
+                const offset = unit(ingestion.offset).toNumber('hours') as number
+                return {
+                    drugName: ingestion.drugName,
+                    dosage: dosage,
+                    halfLife: halfLife,
+                    offset: offset,
                 }
-            },
-        }} render={(b) => {
-            b.create('point', [1, 4], {size: 4, name: 'A'});
-            b.create('functiongraph', [
-                    function (x) {
-                        return 100/(Math.pow(2, (x/10)));
-                    }, 0, 50,
-                ]
-            );
-        }}/>
+            } catch (e) {
+                console.log("parse exception", e)
+                return undefined
+            }
+        }).filter(v => v) as parsedIngestion[]
+        const lines = parsedIngestions.map((i): point[] => {
+            return plotIngestion(i)
+        })
+        console.log("lines", lines)
+        return (
+            <div className="App">
+                <FlexibleWidthXYPlot height={300}>
+                    <VerticalGridLines/>
+                    <HorizontalGridLines/>
+                    <XAxis/>
+                    <YAxis/>
+                    {
+                        lines.map((lines, i) => {
+                            return <AreaSeries color={(new ColorHash).hex((parsedIngestions[i].drugName))} data={lines} opacity={0.5}/>
+                        })
+                    }
+                </FlexibleWidthXYPlot>
+            </div>
+        );
     }, [ingestions])
 
     return (
