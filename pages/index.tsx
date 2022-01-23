@@ -356,9 +356,15 @@ const Home: NextPage = () => {
 }
 
 const knownDrugs: Record<string, string> = {
+    "Alprazolam": "12h",
     "Amphetamine": "10h",
+    "Atorvastatin": "7h",
     "Caffeine": "5h",
+    "Hydrocodone": "3.8h",
     "LSD": "5.1h",
+    "Metaprolol": "3.5h",
+    "Gabapentin": "6h",
+    "Sertraline": "26h",
 }
 
 export default Home
