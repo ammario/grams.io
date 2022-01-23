@@ -1,7 +1,12 @@
 import type {NextPage} from 'next'
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/router";
 import DeleteIcon from '@mui/icons-material/Delete';
+import FunctionPlot from "../components/FunctionPlot";
+import {FunctionPlotDatum, FunctionPlotOptions} from "function-plot/dist/types";
+import {unit} from "mathjs";
+// @ts-ignore
+import compile from "built-in-math-eval";
 
 interface ingestion {
     offset: string
@@ -44,6 +49,61 @@ const Home: NextPage = () => {
         router.query.ingestions = JSON.stringify(ingestions)
         router.replace(router)
     }, [ingestions])
+
+    // title=""
+    // grid={true}
+    // disableZoom={true}
+    // yAxis={{domain: [0, maxDosage * 1.1], label: "Sum of residuals (mg)"}}
+    // xAxis={{domain: [0, 24], label: "Time (hours)"}}
+    // data={
+    //     graphData
+    // }
+    const graphData: Omit<FunctionPlotOptions, "target"> = useMemo(() => {
+            let maxDosage = 0;
+            let maxTime = 0;
+            const data = ingestions.map((ingestion): FunctionPlotDatum | undefined => {
+                try {
+                    const dosage = unit(ingestion.dosage).toNumeric('mg') as number
+                    if (dosage > maxDosage) {
+                        maxDosage = dosage
+                    }
+                    const halfLife = unit(ingestion.halfLife).toNumber('hours') as number
+                    const offset = unit(ingestion.offset).toNumber('hours') as number
+                    const fn = dosage.toString() + "/(2^(x/" + halfLife.toString() + "))"
+                    for (let t = 1; t *= 1.3;) {
+                        const residuals = compile(fn).eval({x: t})
+                        if (residuals < 0.03 * dosage) {
+                            if (t > maxTime) {
+                                maxTime = t
+                            }
+                            break
+                        }
+                    }
+                    console.log("offset", offset)
+                    return {
+                        fnType: "linear",
+                        fn: fn,
+                        offset: [2000, 20],
+                        graphType: "polyline",
+                        closed: false,
+                    }
+                } catch (e) {
+                    console.log(e)
+                    return undefined
+                }
+
+            }).filter(e => e) as FunctionPlotDatum[]
+
+            return {
+                grid: true,
+                disableZoom: true,
+                yAxis: {domain: [0, maxDosage * 1.1], label: "Sum of residuals (mg)"},
+                xAxis: {domain: [0, maxTime], label: "Time (hours)"},
+                data: data,
+            }
+        }, [ingestions]
+    )
+
     return (
         <div className="h-screen w-screen flex flex-col md:container md:mx-auto py-2 md:py-10">
             <title>grams.io drug half-life calculator</title>
@@ -64,10 +124,11 @@ const Home: NextPage = () => {
                         ingestions.map((ingestion, index) => {
                             function edit(editedIngestion: Partial<ingestion>) {
                                 const newIngestions = [...ingestions]
-                                newIngestions[index] = {
+                                const newIngestion = {
                                     ...ingestion,
                                     ...editedIngestion,
                                 }
+                                newIngestions[index] = newIngestion
                                 setIngestions(newIngestions)
                             }
 
@@ -89,9 +150,10 @@ const Home: NextPage = () => {
                                 }} required/>
 
                                 <input type="text" value={ingestion.dosage} placeholder="0mg" id="dosage"
-                                       placeholder="50mg" required/>
+                                       placeholder="50mg" onChange={e => edit({dosage: e.target.value})} required/>
                                 <input type="text" id="half-life"
-                                       placeholder="4.5h" value={ingestion.halfLife} required/>
+                                       placeholder="4.5h" value={ingestion.halfLife}
+                                       onChange={(e => edit({halfLife: e.target.value}))} required/>
                                 <button className="trash" onClick={() => {
                                     const copy = [...ingestions]
                                     copy.splice(index, 1)
@@ -112,6 +174,10 @@ const Home: NextPage = () => {
                         Add ingestion
                     </button>
                 </div>
+            </div>
+            <div id="results" className="container py-4 px-0">
+                <h2>Results</h2>
+                <FunctionPlot {...graphData}/>
             </div>
         </div>
     )
