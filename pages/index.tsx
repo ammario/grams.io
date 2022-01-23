@@ -1,9 +1,9 @@
 import type {NextPage} from 'next'
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {useRouter} from "next/router";
 import DeleteIcon from '@mui/icons-material/Delete';
 import '../node_modules/react-vis/dist/style.css';
-import {AreaSeries, FlexibleWidthXYPlot, HorizontalGridLines, VerticalGridLines, XAxis, XYPlot, YAxis} from 'react-vis';
+import {Hint, LineSeries, FlexibleWidthXYPlot, HorizontalGridLines, VerticalGridLines, XAxis, XYPlot, YAxis} from 'react-vis';
 import {unit} from 'mathjs';
 import ColorHash from 'color-hash';
 
@@ -45,10 +45,16 @@ const plotIngestion = (i: parsedIngestion): point[] => {
             y: i.dosage / Math.pow(2, (x / i.halfLife)),
         })
     }
+    // Apply offset (if any)
+    if (i.offset > 0) {
+       points.forEach((point, index) => {
+           points[index].x += i.offset
+       })
+    }
     return points
 }
 
-const drugColor = new ColorHash()
+const drugColor = new ColorHash({lightness: 0.5})
 
 const Home: NextPage = () => {
     const router = useRouter()
@@ -79,53 +85,6 @@ const Home: NextPage = () => {
         router.replace(router)
     }, [ingestions])
 
-
-    // const graphData: Omit<FunctionPlotOptions, "target"> = useMemo(() => {
-    //         let maxDosage = 0;
-    //         let maxTime = 0;
-    //         const data = ingestions.map((ingestion): FunctionPlotDatum | undefined => {
-    //             try {
-    //                 const dosage = unit(ingestion.dosage).toNumeric('mg') as number
-    //                 if (dosage > maxDosage) {
-    //                     maxDosage = dosage
-    //                 }
-    //                 const halfLife = unit(ingestion.halfLife).toNumber('hours') as number
-    //                 const offset = unit(ingestion.offset).toNumber('hours') as number
-    //                 const fn = dosage.toString() + "/(2^(x/" + halfLife.toString() + "))"
-    //                 for (let t = 1; t *= 1.3;) {
-    //                     const residuals = compile(fn).eval({x: t})
-    //                     if (residuals < 0.03 * dosage) {
-    //                         if (t > maxTime) {
-    //                             maxTime = t
-    //                         }
-    //                         break
-    //                     }
-    //                 }
-    //                 console.log("offset", offset)
-    //                 return {
-    //                     fnType: "linear",
-    //                     fn: fn,
-    //                     offset: [2000, 20],
-    //                     graphType: "polyline",
-    //                     closed: false,
-    //                 }
-    //             } catch (e) {
-    //                 console.log(e)
-    //                 return undefined
-    //             }
-    //
-    //         }).filter(e => e) as FunctionPlotDatum[]
-    //
-    //         return {
-    //             grid: true,
-    //             disableZoom: true,
-    //             yAxis: {domain: [0, maxDosage * 1.1], label: "Sum of residuals (mg)"},
-    //             xAxis: {domain: [0, maxTime], label: "Time (hours)"},
-    //             data: data,
-    //         }
-    //     }, [ingestions]
-    // )
-
     const graphData = useMemo((): JSX.Element => {
         const parsedIngestions = ingestions.map((ingestion): parsedIngestion | undefined => {
             try {
@@ -147,16 +106,15 @@ const Home: NextPage = () => {
             return plotIngestion(i)
         })
         console.log("lines", lines)
+
         return (
             <div className="App">
                 <FlexibleWidthXYPlot height={300}>
-                    <VerticalGridLines/>
-                    <HorizontalGridLines/>
-                    <XAxis/>
-                    <YAxis/>
+                    <XAxis title={"Hours"} tickFormat={v => `${v}h`}/>
+                    <YAxis title={"Residuals (mg)"} />
                     {
                         lines.map((lines, i) => {
-                            return <AreaSeries color={(new ColorHash).hex((parsedIngestions[i].drugName))} data={lines} opacity={0.5}/>
+                            return <LineSeries strokeWidth="2" color={drugColor.hex((parsedIngestions[i].drugName))} data={lines} opacity={1}/>
                         })
                     }
                 </FlexibleWidthXYPlot>
@@ -200,7 +158,7 @@ const Home: NextPage = () => {
                                         offset: e.target.value,
                                     })
                                 }} required/>
-                                <input type="text" id="drug-name" list="known-drugs"
+                                <input type="text" id="drug-name" list="known-drugs" style={{backgroundColor: drugColor.hex(ingestion.drugName)}}
                                        placeholder="Caffeine" value={ingestion.drugName} onChange={(e) => {
                                     const knownHalfLife = knownDrugs[e.target.value]
                                     edit({
