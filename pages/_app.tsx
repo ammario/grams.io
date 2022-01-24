@@ -6,7 +6,7 @@ function MyApp({Component, pageProps}: AppProps) {
     return (
         <>
             <Head>
-                <title>Half-life Calculator – grams.io</title>
+                <title>Drug Half-life Calculator – Grams</title>
                 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RZ3SWVWV2J"/>
                 <script dangerouslySetInnerHTML={{
                     __html: `
