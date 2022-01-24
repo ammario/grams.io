@@ -345,12 +345,12 @@ const Home: NextPage = () => {
                 </Link>
                 <div className="ml-3">
                     <h1>grams.io</h1>
-                    <p>Drug half-life elimination calculator</p>
+                    <p>How long do drugs stay in your body?</p>
                 </div>
             </div>
             <p className="tagline mt-3">
                 Show the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
-                elimination</a> timeline of a set of ingested drugs. <Link
+                half-life elimination</a> timeline of ingested drugs. <Link
                 href={"/?i=1h-Caffeine-80000ug-5h&i=2h-Amphetamine-30mg-600min&i=3h-Caffeine-100mg-5h"}>(Example)</Link>
             </p>
             <div id="ingestions" className="container pt-6 px-0">
