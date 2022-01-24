@@ -349,7 +349,7 @@ const Home: NextPage = () => {
                 </div>
             </div>
             <p className="tagline mt-3">
-                Show the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
+                Grams works by calculating the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
                 half-life elimination</a> timeline of ingested drugs. <Link
                 href={"/?i=1h-Caffeine-80000ug-5h&i=2h-Amphetamine-30mg-600min&i=3h-Caffeine-100mg-5h"}>(Example)</Link>
             </p>
