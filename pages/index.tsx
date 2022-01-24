@@ -361,7 +361,7 @@ const Home: NextPage = () => {
             </div>
             <p className="tagline mt-3">
                 Grams works by calculating the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
-                half-life elimination</a> timeline of ingested drugs. Some drugs (notably alcohol and THC) cannot be modeled
+                half-life elimination</a> timeline of ingested drugs. Some drugs (notably alcohol and THC) cannot be easily modeled
                 in this way, but we will release specialized calculators soon. Drug metabolism depends on
                 ingester characteristics. For example, caffeine&apos;s half-life is 97 hours in infants but only 5 hours
                 in adults. <b>Research drugs before you consume them</b>. This site is not medical advice. <br/><Link
