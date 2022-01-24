@@ -19,6 +19,7 @@ function MyApp({Component, pageProps}: AppProps) {
                 }}>
                 </script>
                 <meta name="viewport" content= "width=device-width, user-scalable=no" />
+                <meta name="description" content="A half-life calculator that estimates how long a drug is in your body.">
                 <link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
             </Head>
             <Component {...pageProps} />
