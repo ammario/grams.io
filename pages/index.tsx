@@ -134,6 +134,16 @@ const mergeLines = (a: point[], b: point[]): point[] => {
 
 const drugColor = new ColorHash({lightness: 0.5});
 
+setTimeout(() => {
+    if (typeof window === "undefined") {
+        console.error("no window?");
+        return null;
+    }
+    // The graph sometimes doesn't render until the page is resized or the lines are edited.
+    // This is a janky solution to fix it.
+    window.dispatchEvent(new Event('resize'));
+}, 500)
+
 const Home: NextPage = () => {
     const router = useRouter();
     // TODO: store the state in the URL
