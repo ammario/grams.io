@@ -142,7 +142,7 @@ setTimeout(() => {
     // The graph sometimes doesn't render until the page is resized or the lines are edited.
     // This is a janky solution to fix it.
     window.dispatchEvent(new Event('resize'));
-}, 500)
+}, 100)
 
 const Home: NextPage = () => {
     const router = useRouter();
