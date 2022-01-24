@@ -206,7 +206,7 @@ const Home: NextPage = () => {
                         return undefined;
                     }
                 })
-                .filter((v) => v) as parsedIngestion[],
+                .filter((v) => v && !isNaN((v.dosage)) && !isNaN(v.halfLife)) as parsedIngestion[],
         [ingestions]
     );
 
@@ -221,12 +221,20 @@ const Home: NextPage = () => {
         return startingDoses;
     }, [parsedIngestions]);
 
+    if (typeof window === "undefined") {
+        console.error("no window?");
+        return null;
+    }
 
-    const [normalizeLines, setNormalizeLines] = useState(false)
+    const [normalizeDosages, setNormalizeDosages] = useState(() => {
+       // const params = new URLSearchParams(window.location.search)
+       //     return params.has("normalize-dosages") || false
+        return false
+    })
 
     const graphData = useMemo((): JSX.Element => {
-
-        console.log("normalize dosages?", normalizeLines)
+        console.log("parsedIngestions", parsedIngestions)
+        console.log("normalize dosages?", normalizeDosages)
         const mergedIngestions = new Map<string, parsedIngestion>([]);
         const lines = new Map<string, point[]>([]);
 
@@ -260,8 +268,8 @@ const Home: NextPage = () => {
         return (
             <div className="w-full h-2/3">
                 <div className={"flex max-w-fit"}>
-                    <input checked={normalizeLines} onChange={(e) => {
-                        setNormalizeLines(e.target.checked)
+                    <input checked={normalizeDosages} onChange={(e) => {
+                        setNormalizeDosages(e.target.checked)
                     }} type={"checkbox"}/> <span style={{fontSize: "10px"}}>Normalize dosages</span>
                 </div>
                 <FlexibleXYPlot margin={{left: 50}}>
@@ -290,7 +298,7 @@ const Home: NextPage = () => {
                                     );
                                 }}
                                 color={drugColor.hex(name)}
-                                data={normalizeLines ? normalizedLines.get(name) : line}
+                                data={normalizeDosages ? normalizedLines.get(name) : line}
                                 opacity={1}
                             />
                         );
@@ -330,12 +338,7 @@ const Home: NextPage = () => {
                 </FlexibleXYPlot>
             </div>
         );
-    }, [parsedIngestions, crosshair, startingDoses, normalizeLines]);
-
-    if (typeof window === "undefined") {
-        console.error("no window?");
-        return null;
-    }
+    }, [parsedIngestions, crosshair, startingDoses, normalizeDosages]);
 
     return (
         <div className="h-screen w-screen flex flex-col md:container md:mx-auto p-3 md:py-10">
