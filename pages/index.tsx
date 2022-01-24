@@ -221,14 +221,7 @@ const Home: NextPage = () => {
         return startingDoses;
     }, [parsedIngestions]);
 
-    if (typeof window === "undefined") {
-        console.error("no window?");
-        return null;
-    }
-
     const [normalizeDosages, setNormalizeDosages] = useState(() => {
-       // const params = new URLSearchParams(window.location.search)
-       //     return params.has("normalize-dosages") || false
         return false
     })
 
@@ -339,6 +332,11 @@ const Home: NextPage = () => {
             </div>
         );
     }, [parsedIngestions, crosshair, startingDoses, normalizeDosages]);
+
+    if (typeof window === "undefined") {
+        console.error("no window?");
+        return null;
+    }
 
     return (
         <div className="h-screen w-screen flex flex-col md:container md:mx-auto p-3 md:py-10">
