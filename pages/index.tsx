@@ -1,75 +1,83 @@
-import type {NextPage} from "next";
-import {useEffect, useMemo, useState} from "react";
-import {useRouter} from "next/router";
+import type { NextPage } from "next";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import DeleteIcon from "@mui/icons-material/Delete";
 import "../node_modules/react-vis/dist/style.css";
-import {Crosshair, FlexibleXYPlot, HorizontalGridLines, LineSeries, VerticalGridLines, XAxis, YAxis,} from "react-vis";
-import {unit} from "mathjs";
+import {
+  Crosshair,
+  FlexibleXYPlot,
+  HorizontalGridLines,
+  LineSeries,
+  VerticalGridLines,
+  XAxis,
+  YAxis,
+} from "react-vis";
+import { unit } from "mathjs";
 import ColorHash from "color-hash";
 import Image from "next/image";
 import Add from "@mui/icons-material/Add";
-import {CopyAll} from "@mui/icons-material";
-import {Link} from "@mui/material";
+import { CopyAll } from "@mui/icons-material";
+import { Link } from "@mui/material";
 
 interface ingestion {
-    offset: string;
-    drugName: string;
-    dosage: string;
-    halfLife: string;
-    id: string;
+  offset: string;
+  drugName: string;
+  dosage: string;
+  halfLife: string;
+  id: string;
 }
 
-const urlDelimiter = "-"
+const urlDelimiter = "-";
 
 const encodeIngestionURL = (is: ingestion[]) => {
-    const params = new URLSearchParams()
-    is.forEach((i) => {
-        i.offset = i.offset.replace(urlDelimiter, "")
-        i.drugName = i.drugName.replace(urlDelimiter, "")
-        i.dosage = i.dosage.replace(urlDelimiter, "")
-        i.halfLife = i.halfLife.replace(urlDelimiter, "")
-        params.append(
-            "i",
-            `${i.offset}${urlDelimiter}${i.drugName}${urlDelimiter}${i.dosage}${urlDelimiter}${i.halfLife}`,
-        )
-    })
-    console.log("url encoded as", params.toString())
-    return params
-}
+  const params = new URLSearchParams();
+  is.forEach((i) => {
+    i.offset = i.offset.replace(urlDelimiter, "");
+    i.drugName = i.drugName.replace(urlDelimiter, "");
+    i.dosage = i.dosage.replace(urlDelimiter, "");
+    i.halfLife = i.halfLife.replace(urlDelimiter, "");
+    params.append(
+      "i",
+      `${i.offset}${urlDelimiter}${i.drugName}${urlDelimiter}${i.dosage}${urlDelimiter}${i.halfLife}`
+    );
+  });
+  console.log("url encoded as", params.toString());
+  return params;
+};
 
 const decodeIngestionURL = (params: URLSearchParams): ingestion[] => {
-    return params.getAll("i").map((v) => {
-        const tokens = v.split(urlDelimiter)
-        return {
-            offset: tokens[0],
-            drugName: tokens[1],
-            dosage: tokens[2],
-            halfLife: tokens[3],
-            id: Math.random().toString(),
-        }
-    })
-}
+  return params.getAll("i").map((v) => {
+    const tokens = v.split(urlDelimiter);
+    return {
+      offset: tokens[0],
+      drugName: tokens[1],
+      dosage: tokens[2],
+      halfLife: tokens[3],
+      id: Math.random().toString(),
+    };
+  });
+};
 
 const emptyIngestion = (): ingestion => {
-    return {
-        offset: "0min",
-        drugName: "",
-        halfLife: "",
-        dosage: "",
-        id: Math.random().toString(),
-    };
+  return {
+    offset: "0min",
+    drugName: "",
+    halfLife: "",
+    dosage: "",
+    id: Math.random().toString(),
+  };
 };
 
 interface parsedIngestion {
-    offset: number;
-    drugName: string;
-    halfLife: number;
-    dosage: number;
+  offset: number;
+  drugName: string;
+  halfLife: number;
+  dosage: number;
 }
 
 interface point {
-    x: number;
-    y: number;
+  x: number;
+  y: number;
 }
 
 const plotInterval = 0.1;
@@ -77,440 +85,477 @@ const plotInterval = 0.1;
 // ingestionEndpoint calculates the time by which less than 1/33 of original dose
 // still resides in the ingester.
 const ingestionEndpoint = (i: parsedIngestion): number => {
-    return i.halfLife * Math.log2(33) + i.offset;
+  return i.halfLife * Math.log2(33) + i.offset;
 };
 
 // plotIngestion returns 1000 points representing the metabolism of the ingestion.
 const plotIngestion = (i: parsedIngestion, endPoint: number): point[] => {
-    // The amount of hours by which less than 1/33 of the original dose is present.
-    let points: point[] = [];
-    for (let x = 0; x <= endPoint; x += plotInterval) {
-        if (x < i.offset) {
-            points.push({
-                x: x,
-                y: 0,
-            });
-            continue;
-        }
-        points.push({
-            x: x,
-            y: i.dosage / Math.pow(2, (x - i.offset) / i.halfLife),
-        });
+  // The amount of hours by which less than 1/33 of the original dose is present.
+  let points: point[] = [];
+  for (let x = 0; x <= endPoint; x += plotInterval) {
+    if (x < i.offset) {
+      points.push({
+        x: x,
+        y: 0,
+      });
+      continue;
     }
-
-    // Round for clean merging later.
-    points.forEach((point, index) => {
-        points[index].x = Math.round(point.x * 10) / 10;
+    points.push({
+      x: x,
+      y: i.dosage / Math.pow(2, (x - i.offset) / i.halfLife),
     });
-    return points;
+  }
+
+  // Round for clean merging later.
+  points.forEach((point, index) => {
+    points[index].x = Math.round(point.x * 10) / 10;
+  });
+  return points;
 };
 
 // mergeLines is a PITA function that combines two lines generated by plotIngestion.
 const mergeLines = (a: point[], b: point[]): point[] => {
-    let c = new Map<number, number>([]);
-    const merge = (vs: point[]) => {
-        vs.forEach((v) => {
-            if (c.has(v.x)) {
-                c.set(v.x, (c.get(v.x) as number) + v.y);
-                return;
-            }
-            c.set(v.x, v.y);
-        });
-    };
-    merge(a);
-    merge(b);
-    return Array.from(c, ([x, y]): point => {
-        return {x: x, y: y};
-    }).sort((a, b) => {
-        if (a.x > b.x) {
-            return 1;
-        }
-        if (a.x < b.x) {
-            return -1;
-        }
-        return 0;
+  let c = new Map<number, number>([]);
+  const merge = (vs: point[]) => {
+    vs.forEach((v) => {
+      if (c.has(v.x)) {
+        c.set(v.x, (c.get(v.x) as number) + v.y);
+        return;
+      }
+      c.set(v.x, v.y);
     });
+  };
+  merge(a);
+  merge(b);
+  return Array.from(c, ([x, y]): point => {
+    return { x: x, y: y };
+  }).sort((a, b) => {
+    if (a.x > b.x) {
+      return 1;
+    }
+    if (a.x < b.x) {
+      return -1;
+    }
+    return 0;
+  });
 };
 
-const drugColor = new ColorHash({lightness: 0.5});
+const drugColor = new ColorHash({ lightness: 0.5 });
 
 setTimeout(() => {
-    if (typeof window === "undefined") {
-        console.error("no window?");
-        return null;
-    }
-    // The graph sometimes doesn't render until the page is resized or the lines are edited.
-    // This is a janky solution to fix it.
-    window.dispatchEvent(new Event('resize'));
-}, 100)
+  if (typeof window === "undefined") {
+    console.error("no window?");
+    return null;
+  }
+  // The graph sometimes doesn't render until the page is resized or the lines are edited.
+  // This is a janky solution to fix it.
+  window.dispatchEvent(new Event("resize"));
+}, 100);
 
 const Home: NextPage = () => {
-    const router = useRouter();
-    // TODO: store the state in the URL
-    const [ingestions, setIngestions] = useState<ingestion[]>(() => {
-        console.log(router.query.toString());
-        if (typeof window === "undefined") {
-            // I have no idea how to grab URL params within a useState with NextJS.
-            return [emptyIngestion()];
-        }
+  const router = useRouter();
+  // TODO: store the state in the URL
+  const [ingestions, setIngestions] = useState<ingestion[]>(() => {
+    console.log(router.query.toString());
+    if (typeof window === "undefined") {
+      // I have no idea how to grab URL params within a useState with NextJS.
+      return [emptyIngestion()];
+    }
 
-        try {
-            const ingestions = decodeIngestionURL(new URLSearchParams(window.location.search))
-            console.log("ingestions from URL", ingestions);
-            return ingestions
-        } catch (e) {
-            console.log("oops at the url", e);
-            return [emptyIngestion()];
-        }
+    try {
+      const ingestions = decodeIngestionURL(
+        new URLSearchParams(window.location.search)
+      );
+      console.log("ingestions from URL", ingestions);
+      return ingestions;
+    } catch (e) {
+      console.log("oops at the url", e);
+      return [emptyIngestion()];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const url = {
+        query: encodeIngestionURL(ingestions).toString(),
+      };
+      router.replace(url, undefined, { shallow: true });
+      console.log("new url", JSON.stringify(url));
+    } catch {
+      return;
+    }
+  }, [ingestions]);
+
+  const [crosshair, setCrosshair] = useState<
+    {
+      x: number;
+      y: number;
+      name: string;
+    }[]
+  >();
+
+  const tryParseUnit = (v: string, u: string): number => {
+    try {
+      return unit(v).toNumber(u);
+    } catch {
+      return parseFloat(v);
+    }
+  };
+
+  const parseIngestion = (i: ingestion): parsedIngestion => {
+    const dosage = tryParseUnit(i.dosage, "mg");
+    const halfLife = tryParseUnit(i.halfLife, "hours");
+    if (halfLife > 30 * 30) {
+      throw "Half life is too long (the application will crash!)";
+    }
+    const offset = tryParseUnit(i.offset, "hours");
+    return {
+      drugName: i.drugName,
+      dosage: dosage,
+      halfLife: halfLife,
+      offset: offset,
+    };
+  };
+
+  const parsedIngestions = useMemo(
+    () =>
+      ingestions
+        .map((ingestion): parsedIngestion | undefined => {
+          try {
+            return parseIngestion(ingestion);
+          } catch (e) {
+            console.log("recoverable ingestion parse exception", e);
+            return undefined;
+          }
+        })
+        .filter(
+          (v) => v && !isNaN(v.dosage) && !isNaN(v.halfLife)
+        ) as parsedIngestion[],
+    [ingestions]
+  );
+
+  const startingDoses = useMemo(() => {
+    const startingDoses = new Map<string, number>();
+    parsedIngestions.forEach((ingestion) => {
+      const existingDose = startingDoses.get(ingestion.drugName) || 0;
+      const newDose = existingDose + ingestion.dosage;
+      startingDoses.set(ingestion.drugName, newDose);
+      console.log("set starting dose", ingestion.drugName, newDose);
+    });
+    return startingDoses;
+  }, [parsedIngestions]);
+
+  const [normalizeDosages, setNormalizeDosages] = useState(() => {
+    return false;
+  });
+
+  const graphData = useMemo((): JSX.Element => {
+    console.log("parsedIngestions", parsedIngestions);
+    console.log("normalize dosages?", normalizeDosages);
+    const mergedIngestions = new Map<string, parsedIngestion>([]);
+    const lines = new Map<string, point[]>([]);
+
+    // Find maximum graph endpoint so all lines have equal resolution.
+    const graphEndpoint = parsedIngestions
+      .map((i) => ingestionEndpoint(i))
+      .reduce((a, b) => Math.max(a, b), 0);
+
+    parsedIngestions.forEach((ingestion) => {
+      if (!mergedIngestions.has(ingestion.drugName)) {
+        lines.set(ingestion.drugName, plotIngestion(ingestion, graphEndpoint));
+        mergedIngestions.set(ingestion.drugName, ingestion);
+        return;
+      }
+      const aLine = lines.get(ingestion.drugName) as point[];
+      const bLine = plotIngestion(ingestion, graphEndpoint);
+      console.log("a", aLine, "b", bLine);
+      lines.set(ingestion.drugName, mergeLines(aLine, bLine));
     });
 
-    useEffect(() => {
-        try {
-            const url = {
-                query: encodeIngestionURL(ingestions).toString(),
-            };
-            router.replace(url, undefined, {shallow: true});
-            console.log("new url", JSON.stringify(url));
-        } catch {
-            return
-        }
-    }, [ingestions]);
-
-    const [crosshair, setCrosshair] = useState<{
-        x: number;
-        y: number;
-        name: string;
-    }[]>();
-
-    const tryParseUnit = (v: string, u: string): number => {
-       try {
-           return unit(v).toNumber(u)
-       } catch {
-           return parseFloat(v)
-       }
-    }
-
-    const parseIngestion = (i: ingestion): parsedIngestion => {
-        const dosage = tryParseUnit(i.dosage, "mg")
-        const halfLife = tryParseUnit(i.halfLife, "hours")
-        if (halfLife > 30 * 30) {
-            throw "Half life is too long (the application will crash!)";
-        }
-        const offset = tryParseUnit(i.offset, "hours")
-        return {
-            drugName: i.drugName,
-            dosage: dosage,
-            halfLife: halfLife,
-            offset: offset,
-        };
-    }
-
-    const parsedIngestions = useMemo(
-        () =>
-            ingestions
-                .map((ingestion): parsedIngestion | undefined => {
-                    try {
-                        return parseIngestion(ingestion)
-                    } catch (e) {
-                        console.log("recoverable ingestion parse exception", e);
-                        return undefined;
-                    }
-                })
-                .filter((v) => v && !isNaN((v.dosage)) && !isNaN(v.halfLife)) as parsedIngestion[],
-        [ingestions]
-    );
-
-    const startingDoses = useMemo(() => {
-        const startingDoses = new Map<string, number>();
-        parsedIngestions.forEach((ingestion) => {
-            const existingDose = startingDoses.get(ingestion.drugName) || 0;
-            const newDose = existingDose + ingestion.dosage;
-            startingDoses.set(ingestion.drugName, newDose);
-            console.log("set starting dose", ingestion.drugName, newDose);
-        });
-        return startingDoses;
-    }, [parsedIngestions]);
-
-    const [normalizeDosages, setNormalizeDosages] = useState(() => {
-        return false
-    })
-
-    const graphData = useMemo((): JSX.Element => {
-        console.log("parsedIngestions", parsedIngestions)
-        console.log("normalize dosages?", normalizeDosages)
-        const mergedIngestions = new Map<string, parsedIngestion>([]);
-        const lines = new Map<string, point[]>([]);
-
-        // Find maximum graph endpoint so all lines have equal resolution.
-        const graphEndpoint = parsedIngestions
-            .map((i) => ingestionEndpoint(i))
-            .reduce((a, b) => Math.max(a, b), 0);
-
-        parsedIngestions.forEach((ingestion) => {
-            if (!mergedIngestions.has(ingestion.drugName)) {
-                lines.set(ingestion.drugName, plotIngestion(ingestion, graphEndpoint));
-                mergedIngestions.set(ingestion.drugName, ingestion);
-                return;
-            }
-            const aLine = lines.get(ingestion.drugName) as point[];
-            const bLine = plotIngestion(ingestion, graphEndpoint);
-            console.log("a", aLine, "b", bLine);
-            lines.set(ingestion.drugName, mergeLines(aLine, bLine));
-        });
-
-        const normalizedLines = new Map<string, point[]>([])
-        Array.from(lines).forEach(([name, points]) => {
-            normalizedLines.set(name, points.map((ps) => {
-                return {
-                    x: ps.x,
-                    y: ps.y / startingDoses.get(name)!,
-                }
-            }))
+    const normalizedLines = new Map<string, point[]>([]);
+    Array.from(lines).forEach(([name, points]) => {
+      normalizedLines.set(
+        name,
+        points.map((ps) => {
+          return {
+            x: ps.x,
+            y: ps.y / startingDoses.get(name)!,
+          };
         })
-
-        return (
-            <div className="w-full h-2/3">
-                <div className={"flex max-w-fit"}>
-                    <input checked={normalizeDosages} onChange={(e) => {
-                        setNormalizeDosages(e.target.checked)
-                    }} type={"checkbox"}/> <span style={{fontSize: "10px"}}>Normalize dosages</span>
-                </div>
-                <FlexibleXYPlot margin={{left: 50}}>
-                    <XAxis title={"Time"} tickFormat={(v) => `${v}h`}/>
-                    <YAxis title={"Residuals (mg)"}/>
-                    <VerticalGridLines/>
-                    <HorizontalGridLines/>
-                    {Array.from(lines, ([name, line], k) => {
-                        return (
-                            <LineSeries
-                                onNearestX={(e, {index}) => {
-                                    // The first line is responsible for setting the cross for every line.
-                                    if (k > 0) {
-                                        return;
-                                    }
-
-                                    setCrosshair(
-                                        Array.from(lines).map(([name, line]) => {
-                                            // Each line is guaranteed to have a point at the same index.
-                                            return {
-                                                x: e.x,
-                                                y: line[index].y,
-                                                name: name,
-                                            };
-                                        })
-                                    );
-                                }}
-                                color={drugColor.hex(name)}
-                                data={normalizeDosages ? normalizedLines.get(name) : line}
-                                opacity={1}
-                            />
-                        );
-                    })}
-                    {typeof crosshair !== "undefined" && (
-                        <Crosshair
-                            values={crosshair}
-                            style={{
-                                line: {
-                                    background: "rgba(0, 0, 0, 0.17)",
-                                    width: "3px",
-                                },
-                            }}
-                            titleFormat={(ps) => {
-                                console.log(ps);
-                                return {title: "Time", value: `${ps[0].x}h`};
-                            }}
-                            itemsFormat={(ps) => {
-                                return ps.map((pt: point, index: number) => {
-                                    const startDose = startingDoses.get(
-                                        crosshair[index].name
-                                    ) as number;
-                                    console.log("starty", startDose);
-                                    const residual = pt.y;
-                                    const percentRemaining = Math.round(
-                                        ((residual * 100) / startDose)).toPrecision(2);
-                                    return {
-                                        title: crosshair[index].name,
-                                        value: `${residual.toPrecision(
-                                            3
-                                        )}mg (${percentRemaining}%)`,
-                                    };
-                                });
-                            }}
-                        />
-                    )}
-                </FlexibleXYPlot>
-            </div>
-        );
-    }, [parsedIngestions, crosshair, startingDoses, normalizeDosages]);
-
-    if (typeof window === "undefined") {
-        console.error("no window?");
-        return null;
-    }
+      );
+    });
 
     return (
-        <div className="h-screen w-screen flex flex-col md:container md:mx-auto p-3 md:py-10">
-            <div className="flex items-center mb-2">
-                <Link href="/">
-                    <Image width="48px" height="48px" src={"/icon.svg"}></Image>
-                </Link>
-                <div className="ml-3">
-                    <h1>grams.io</h1>
-                    <p>How long do drugs stay in your body?</p>
-                </div>
-            </div>
-            <p className="tagline mt-3">
-                Grams works by calculating the <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
-                half-life elimination</a> timeline of ingested drugs. Some drugs (notably alcohol and THC) cannot be easily modeled
-                in this way, but we will release specialized calculators soon. Drug metabolism depends on
-                ingester characteristics. For example, caffeine&apos;s half-life is 97 hours in infants but only 5 hours
-                in adults. <b>Research drugs before you consume them</b>. This site is not medical advice. <br/><Link
-                href={"/?i=1h-Caffeine-80000ug-5h&i=2h-Amphetamine-30mg-600min&i=3h-Caffeine-100mg-5h"}>(Example report)</Link>
-            </p>
-            <div id="ingestions" className="container pt-6 px-0">
-                <div className={"ingest-container grid gap-4 mb-1"}>
-                    <span>Offset</span>
-                    <span>Drug name</span>
-                    <span>Dosage</span>
-                    <span>Half-life</span>
-                    <span> </span>
-                </div>
-                {ingestions.map((ingestion, index) => {
-                    function edit(editedIngestion: Partial<ingestion>) {
-                        const newIngestions = [...ingestions];
-                        newIngestions[index] = {
-                            ...ingestion,
-                            ...editedIngestion,
-                        };
-                        setIngestions(newIngestions);
-                    }
-
-                    return (
-                        <div
-                            key={ingestion.id}
-                            className="ingest-container grid gap-4 py-1"
-                        >
-                            <input
-                                type="text"
-                                id="offset"
-                                placeholder="0m"
-                                value={ingestion.offset}
-                                onChange={(e) => {
-                                    edit({
-                                        offset: e.target.value,
-                                    });
-                                }}
-                                required
-                            />
-                            <input
-                                type="text"
-                                id="drug-name"
-                                list="known-drugs"
-                                style={{
-                                    borderColor:
-                                        ingestion.drugName === ""
-                                            ? "rgba(0, 0, 0, 0.07)"
-                                            : drugColor.hex(ingestion.drugName),
-                                    borderWidth: "3px",
-                                }}
-                                placeholder="Caffeine"
-                                value={ingestion.drugName}
-                                onChange={(e) => {
-                                    const knownHalfLife = knownDrugs[e.target.value];
-                                    edit({
-                                        halfLife: knownHalfLife
-                                            ? knownHalfLife
-                                            : ingestion.halfLife,
-                                        drugName: e.target.value,
-                                    });
-                                }}
-                                required
-                            />
-
-                            <input
-                                type="text"
-                                value={ingestion.dosage}
-                                placeholder="0mg"
-                                id="dosage"
-                                onChange={(e) => edit({dosage: e.target.value})}
-                                required
-                            />
-                            <input
-                                type="text"
-                                id="half-life"
-                                placeholder="4.5h"
-                                value={ingestion.halfLife}
-                                onChange={(e) => edit({halfLife: e.target.value})}
-                                required
-                            />
-                            <button
-                                className="trash"
-                                tabIndex={-1}
-                                onClick={() => {
-                                    const copy = [...ingestions];
-                                    copy.splice(index, 1);
-                                    console.log(
-                                        "trash",
-                                        JSON.stringify(ingestions),
-                                        JSON.stringify(copy)
-                                    );
-                                    setIngestions(copy);
-                                }}
-                            >
-                                <DeleteIcon/>
-                            </button>
-                        </div>
-                    );
-                })}
-                <datalist id="known-drugs">
-                    {Object.keys(knownDrugs).map((key) => (
-                        <option key={key} value={key}>{knownDrugs[key]}</option>
-                    ))}
-                </datalist>
-                <div className={"flex justify-between py-4"}>
-                    <button
-                        className="flex items-center"
-                        onClick={() => setIngestions([...ingestions, emptyIngestion()])}
-                    >
-                        <Add className="mr-1"/>
-                        Add Ingestion
-                    </button>
-
-                    <button onClick={() => {
-                        navigator.clipboard.writeText(window.location.toString())
-                    }}>
-                        <CopyAll className="mr-1"/>
-                        Copy URL
-                    </button>
-                </div>
-            </div>
-            <div id="results" className="container py-2 px-0 flex-1 flex flex-col">
-                <div className="flex">
-                    <h2>Results</h2>
-                </div>
-                <hr className="mb-4 mt-1"/>
-                {graphData}
-            </div>
-            <div className="mt-auto text-center text-md">
-                <a rel="noreferrer" href="email:contact@grams.io" target="_blank">
-                    contact@grams.io
-                </a>
-            </div>
+      <div className="w-full h-2/3">
+        <div className={"flex max-w-fit"}>
+          <input
+            checked={normalizeDosages}
+            onChange={(e) => {
+              setNormalizeDosages(e.target.checked);
+            }}
+            type={"checkbox"}
+          />{" "}
+          <span style={{ fontSize: "10px" }}>Normalize dosages</span>
         </div>
+        <FlexibleXYPlot margin={{ left: 50 }}>
+          <XAxis title={"Time"} tickFormat={(v) => `${v}h`} />
+          <YAxis title={"Residuals (mg)"} />
+          <VerticalGridLines />
+          <HorizontalGridLines />
+          {Array.from(lines, ([name, line], k) => {
+            return (
+              <LineSeries
+                onNearestX={(e, { index }) => {
+                  // The first line is responsible for setting the cross for every line.
+                  if (k > 0) {
+                    return;
+                  }
+
+                  setCrosshair(
+                    Array.from(lines).map(([name, line]) => {
+                      // Each line is guaranteed to have a point at the same index.
+                      return {
+                        x: e.x,
+                        y: line[index].y,
+                        name: name,
+                      };
+                    })
+                  );
+                }}
+                color={drugColor.hex(name)}
+                data={normalizeDosages ? normalizedLines.get(name) : line}
+                opacity={1}
+              />
+            );
+          })}
+          {typeof crosshair !== "undefined" && (
+            <Crosshair
+              values={crosshair}
+              style={{
+                line: {
+                  background: "rgba(0, 0, 0, 0.17)",
+                  width: "3px",
+                },
+              }}
+              titleFormat={(ps) => {
+                console.log(ps);
+                return { title: "Time", value: `${ps[0].x}h` };
+              }}
+              itemsFormat={(ps) => {
+                return ps.map((pt: point, index: number) => {
+                  const startDose = startingDoses.get(
+                    crosshair[index].name
+                  ) as number;
+                  console.log("starty", startDose);
+                  const residual = pt.y;
+                  const percentRemaining = Math.round(
+                    (residual * 100) / startDose
+                  ).toPrecision(2);
+                  return {
+                    title: crosshair[index].name,
+                    value: `${residual.toPrecision(
+                      3
+                    )}mg (${percentRemaining}%)`,
+                  };
+                });
+              }}
+            />
+          )}
+        </FlexibleXYPlot>
+      </div>
     );
+  }, [parsedIngestions, crosshair, startingDoses, normalizeDosages]);
+
+  if (typeof window === "undefined") {
+    console.error("no window?");
+    return null;
+  }
+
+  return (
+    <div className="h-screen w-screen flex flex-col md:container md:mx-auto p-3 md:py-10">
+      <div className="flex items-center mb-2">
+        <Link href="/">
+          <Image width="48px" height="48px" src={"/icon.svg"}></Image>
+        </Link>
+        <div className="ml-3">
+          <h1>grams.io</h1>
+          <p>How long do drugs stay in your body?</p>
+        </div>
+      </div>
+      <p className="tagline mt-3">
+        Grams works by calculating the{" "}
+        <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
+          half-life elimination
+        </a>{" "}
+        timeline of ingested drugs. Some drugs (notably alcohol and THC) cannot
+        be easily modeled in this way, but we will release specialized
+        calculators soon. Drug metabolism depends on ingester characteristics.
+        For example, caffeine&apos;s half-life is 97 hours in infants but only 5
+        hours in adults. <b>Research drugs before you consume them</b>. This
+        site is not medical advice. <br />
+        <Link
+          href={
+            "/?i=1h-Caffeine-80000ug-5h&i=2h-Amphetamine-30mg-600min&i=3h-Caffeine-100mg-5h"
+          }
+        >
+          (Example report)
+        </Link>
+      </p>
+      <div id="ingestions" className="container pt-6 px-0">
+        <div className={"ingest-container grid gap-4 mb-1"}>
+          <span>Offset</span>
+          <span>Drug name</span>
+          <span>Dosage</span>
+          <span>Half-life</span>
+          <span> </span>
+        </div>
+        {ingestions.map((ingestion, index) => {
+          function edit(editedIngestion: Partial<ingestion>) {
+            const newIngestions = [...ingestions];
+            newIngestions[index] = {
+              ...ingestion,
+              ...editedIngestion,
+            };
+            setIngestions(newIngestions);
+          }
+
+          return (
+            <div
+              key={ingestion.id}
+              className="ingest-container grid gap-4 py-1"
+            >
+              <input
+                type="text"
+                id="offset"
+                placeholder="0m"
+                value={ingestion.offset}
+                onChange={(e) => {
+                  edit({
+                    offset: e.target.value,
+                  });
+                }}
+                required
+              />
+              <input
+                type="text"
+                id="drug-name"
+                list="known-drugs"
+                style={{
+                  borderColor:
+                    ingestion.drugName === ""
+                      ? "rgba(0, 0, 0, 0.07)"
+                      : drugColor.hex(ingestion.drugName),
+                  borderWidth: "3px",
+                }}
+                placeholder="Caffeine"
+                value={ingestion.drugName}
+                onChange={(e) => {
+                  const knownHalfLife = knownDrugs[e.target.value];
+                  edit({
+                    halfLife: knownHalfLife
+                      ? knownHalfLife
+                      : ingestion.halfLife,
+                    drugName: e.target.value,
+                  });
+                }}
+                required
+              />
+
+              <input
+                type="text"
+                value={ingestion.dosage}
+                placeholder="0mg"
+                id="dosage"
+                onChange={(e) => edit({ dosage: e.target.value })}
+                required
+              />
+              <input
+                type="text"
+                id="half-life"
+                placeholder="4.5h"
+                value={ingestion.halfLife}
+                onChange={(e) => edit({ halfLife: e.target.value })}
+                required
+              />
+              <button
+                className="trash"
+                tabIndex={-1}
+                onClick={() => {
+                  const copy = [...ingestions];
+                  copy.splice(index, 1);
+                  console.log(
+                    "trash",
+                    JSON.stringify(ingestions),
+                    JSON.stringify(copy)
+                  );
+                  setIngestions(copy);
+                }}
+              >
+                <DeleteIcon />
+              </button>
+            </div>
+          );
+        })}
+        <datalist id="known-drugs">
+          {Object.keys(knownDrugs).map((key) => (
+            <option key={key} value={key}>
+              {knownDrugs[key]}
+            </option>
+          ))}
+        </datalist>
+        <div className={"flex justify-between py-4"}>
+          <button
+            className="flex items-center"
+            onClick={() => setIngestions([...ingestions, emptyIngestion()])}
+          >
+            <Add className="mr-1" />
+            Add Ingestion
+          </button>
+
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.toString());
+            }}
+          >
+            <CopyAll className="mr-1" />
+            Copy URL
+          </button>
+        </div>
+      </div>
+      <div id="results" className="container py-2 px-0 flex-1 flex flex-col">
+        <div className="flex">
+          <h2>Results</h2>
+        </div>
+        <hr className="mb-4 mt-1" />
+        {graphData}
+      </div>
+      <div className="mt-auto text-center text-md">
+        <a rel="noreferrer" href="email:contact@grams.io" target="_blank">
+          contact@grams.io
+        </a>{" "}
+        | &nbsp;
+        <a
+          rel="noreferrer"
+          href="https://github.com/ammario/grams.io"
+          target="_blank"
+        >
+          View Source
+        </a>
+      </div>
+    </div>
+  );
 };
 
 const knownDrugs: Record<string, string> = {
-    "Amphetamine": "10h",
-    "Caffeine": "5h",
-    "LSD": "5.1h",
-    "Alprazolam": "12h",
-    "Atorvastatin": "7h",
-    "Hydrocodone": "3.8h",
-    "Metaprolol": "3.5h",
-    "Gabapentin": "6h",
-    "Sertraline": "26h",
-
+  Amphetamine: "10h",
+  Caffeine: "5h",
+  LSD: "5.1h",
+  Alprazolam: "12h",
+  Atorvastatin: "7h",
+  Hydrocodone: "3.8h",
+  Metaprolol: "3.5h",
+  Gabapentin: "6h",
+  Sertraline: "26h",
 };
 
 export default Home;
