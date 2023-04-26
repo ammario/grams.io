@@ -1,9 +1,11 @@
+import { Link } from "@mui/material";
+
 const Footer: React.FC = () => {
   return (
     <div className="mt-auto text-center text-md">
-      <a rel="noreferrer" href="email:contact@grams.io" target="_blank">
+      <Link rel="noreferrer" href="email:contact@grams.io" target="_blank">
         contact@grams.io
-      </a>{" "}
+      </Link>{" "}
       | &nbsp;
       <a
         rel="noreferrer"

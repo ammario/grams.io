@@ -2,6 +2,7 @@ import "../styles/globals.scss";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import Script from "next/script";
+import NoSSR from "react-no-ssr";
 
 function GramsApp({ Component, pageProps }: AppProps) {
   return (
@@ -32,7 +33,9 @@ function GramsApp({ Component, pageProps }: AppProps) {
         />
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </Head>
-      <Component {...pageProps} />
+      <NoSSR>
+        <Component {...pageProps} />
+      </NoSSR>
     </>
   );
 }

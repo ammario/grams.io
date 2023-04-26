@@ -1,3 +1,7 @@
+import ColorHash from "color-hash";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+
 export interface Ingestion {
   offset: string;
   drugName: string;
@@ -6,9 +10,26 @@ export interface Ingestion {
   id: string;
 }
 
-const IngestionInput: React.FC<Ingestion> = (ingestion: Ingestion) => {
+export const DrugColor = new ColorHash({ lightness: 0.5 });
+
+export const KnownDrugs: Record<string, string> = {
+  Amphetamine: "10h",
+  Caffeine: "5h",
+  LSD: "5.1h",
+  Alprazolam: "12h",
+  Atorvastatin: "7h",
+  Hydrocodone: "3.8h",
+  Metaprolol: "3.5h",
+  Gabapentin: "6h",
+  Sertraline: "26h",
+};
+
+const IngestionInput: React.FC<{
+  ingestion: Ingestion;
+  edit: (ing: Partial<Ingestion> | undefined) => void;
+}> = ({ ingestion, edit }) => {
   return (
-    <div key={ingestion.id} className="ingest-container grid gap-4 py-1">
+    <div className="ingest-container grid gap-4 py-1">
       <input
         type="text"
         id="offset"
@@ -29,12 +50,12 @@ const IngestionInput: React.FC<Ingestion> = (ingestion: Ingestion) => {
           borderColor:
             ingestion.drugName === ""
               ? "rgba(0, 0, 0, 0.07)"
-              : drugColor.hex(ingestion.drugName),
+              : DrugColor.hex(ingestion.drugName),
         }}
         placeholder="Caffeine"
         value={ingestion.drugName}
         onChange={(e) => {
-          const knownHalfLife = knownDrugs[e.target.value];
+          const knownHalfLife = KnownDrugs[e.target.value];
           edit({
             halfLife: knownHalfLife ? knownHalfLife : ingestion.halfLife,
             drugName: e.target.value,
@@ -63,18 +84,18 @@ const IngestionInput: React.FC<Ingestion> = (ingestion: Ingestion) => {
         className="trash"
         tabIndex={-1}
         onClick={() => {
-          const copy = [...ingestions];
-          copy.splice(index, 1);
-          console.log(
-            "trash",
-            JSON.stringify(ingestions),
-            JSON.stringify(copy)
-          );
-          setIngestions(copy);
+          edit(undefined);
         }}
       >
         <DeleteIcon />
       </button>
+      <datalist id="known-drugs">
+        {Object.keys(KnownDrugs).map((key) => (
+          <option key={key} value={key}>
+            {KnownDrugs[key]}
+          </option>
+        ))}
+      </datalist>
     </div>
   );
 };

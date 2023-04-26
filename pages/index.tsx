@@ -1,7 +1,6 @@
 import type { NextPage } from "next";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
-import DeleteIcon from "@mui/icons-material/Delete";
 import "../node_modules/react-vis/dist/style.css";
 import {
   Crosshair,
@@ -13,13 +12,14 @@ import {
   YAxis,
 } from "react-vis";
 import { unit } from "mathjs";
-import ColorHash from "color-hash";
-import Image from "next/image";
 import Add from "@mui/icons-material/Add";
 import { CopyAll } from "@mui/icons-material";
-import { Link } from "@mui/material";
+import IngestionInput, {
+  DrugColor,
+  Ingestion,
+} from "../components/IngestionInput";
 import Footer from "../components/Footer";
-import { Ingestion } from "../components/IngestionInput";
+import Intro from "../components/Intro";
 
 const urlDelimiter = "-";
 
@@ -134,8 +134,6 @@ const mergeLines = (a: point[], b: point[]): point[] => {
   });
 };
 
-const drugColor = new ColorHash({ lightness: 0.5 });
-
 setTimeout(() => {
   if (typeof window === "undefined") {
     console.error("no window?");
@@ -145,41 +143,6 @@ setTimeout(() => {
   // This is a janky solution to fix it.
   window.dispatchEvent(new Event("resize"));
 }, 100);
-
-const Intro: React.FC = () => {
-  return (
-    <>
-      <div className="flex items-center mb-2">
-        <Link href="/">
-          <Image width="48" height="48" alt="" src={"/icon.svg"}></Image>
-        </Link>
-        <div className="ml-3">
-          <h1>grams.io</h1>
-          <p>How long do drugs stay in your body?</p>
-        </div>
-      </div>
-      <p className="tagline mt-3">
-        Grams works by calculating the{" "}
-        <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
-          half-life elimination
-        </a>{" "}
-        timeline of ingested drugs. Some drugs (notably alcohol and THC) cannot
-        be accurately modeled this way. All drugs metabolize differently in
-        different people. For example, caffeine&apos;s half-life is 97 hours in
-        infants but only 5 hours in adults.{" "}
-        <b>Research drugs before you consume them</b>. This site is not medical
-        advice. <br />
-        <Link
-          href={
-            "/?i=1h-Caffeine-80000ug-5h&i=2h-Amphetamine-30mg-600min&i=3h-Caffeine-100mg-5h"
-          }
-        >
-          (Example report)
-        </Link>
-      </p>{" "}
-    </>
-  );
-};
 
 const Home: NextPage = () => {
   const router = useRouter();
@@ -352,7 +315,7 @@ const Home: NextPage = () => {
                     })
                   );
                 }}
-                color={drugColor.hex(name)}
+                color={DrugColor.hex(name)}
                 data={normalizeDosages ? normalizedLines.get(name) : line}
                 opacity={1}
               />
@@ -413,98 +376,33 @@ const Home: NextPage = () => {
           <span> </span>
         </div>
         {ingestions.map((ingestion, index) => {
-          function edit(editedIngestion: Partial<Ingestion>) {
-            const newIngestions = [...ingestions];
-            newIngestions[index] = {
-              ...ingestion,
-              ...editedIngestion,
-            };
-            setIngestions(newIngestions);
-          }
-
           return (
-            <div
+            <IngestionInput
               key={ingestion.id}
-              className="ingest-container grid gap-4 py-1"
-            >
-              <input
-                type="text"
-                id="offset"
-                placeholder="0m"
-                value={ingestion.offset}
-                onChange={(e) => {
-                  edit({
-                    offset: e.target.value,
-                  });
-                }}
-                required
-              />
-              <input
-                type="text"
-                className={"drug-name"}
-                list="known-drugs"
-                style={{
-                  borderColor:
-                    ingestion.drugName === ""
-                      ? "rgba(0, 0, 0, 0.07)"
-                      : drugColor.hex(ingestion.drugName),
-                }}
-                placeholder="Caffeine"
-                value={ingestion.drugName}
-                onChange={(e) => {
-                  const knownHalfLife = knownDrugs[e.target.value];
-                  edit({
-                    halfLife: knownHalfLife
-                      ? knownHalfLife
-                      : ingestion.halfLife,
-                    drugName: e.target.value,
-                  });
-                }}
-                required
-              />
-
-              <input
-                type="text"
-                value={ingestion.dosage}
-                placeholder="0mg"
-                id="dosage"
-                onChange={(e) => edit({ dosage: e.target.value })}
-                required
-              />
-              <input
-                type="text"
-                id="half-life"
-                placeholder="4.5h"
-                value={ingestion.halfLife}
-                onChange={(e) => edit({ halfLife: e.target.value })}
-                required
-              />
-              <button
-                className="trash"
-                tabIndex={-1}
-                onClick={() => {
-                  const copy = [...ingestions];
-                  copy.splice(index, 1);
+              ingestion={ingestion}
+              edit={(e) => {
+                const newIngestions = [...ingestions];
+                // Trash if undefined.
+                if (e === undefined) {
+                  newIngestions.splice(index, 1);
                   console.log(
                     "trash",
                     JSON.stringify(ingestions),
-                    JSON.stringify(copy)
+                    JSON.stringify(newIngestions)
                   );
-                  setIngestions(copy);
-                }}
-              >
-                <DeleteIcon />
-              </button>
-            </div>
+                } else {
+                  newIngestions[index] = {
+                    ...ingestion,
+                    ...e,
+                  };
+                }
+
+                setIngestions(newIngestions);
+              }}
+            />
           );
         })}
-        <datalist id="known-drugs">
-          {Object.keys(knownDrugs).map((key) => (
-            <option key={key} value={key}>
-              {knownDrugs[key]}
-            </option>
-          ))}
-        </datalist>
+
         <div className={"flex justify-between py-4"}>
           <button
             className="flex items-center"
@@ -531,21 +429,10 @@ const Home: NextPage = () => {
         <hr className="mb-4 mt-1" />
         {graphData}
       </div>
+
       <Footer />
     </div>
   );
-};
-
-const knownDrugs: Record<string, string> = {
-  Amphetamine: "10h",
-  Caffeine: "5h",
-  LSD: "5.1h",
-  Alprazolam: "12h",
-  Atorvastatin: "7h",
-  Hydrocodone: "3.8h",
-  Metaprolol: "3.5h",
-  Gabapentin: "6h",
-  Sertraline: "26h",
 };
 
 export default Home;
