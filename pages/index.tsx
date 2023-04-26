@@ -18,6 +18,7 @@ import Image from "next/image";
 import Add from "@mui/icons-material/Add";
 import { CopyAll } from "@mui/icons-material";
 import { Link } from "@mui/material";
+import Footer from "../components/Footer";
 
 interface ingestion {
   offset: string;
@@ -152,6 +153,41 @@ setTimeout(() => {
   window.dispatchEvent(new Event("resize"));
 }, 100);
 
+const Intro: React.FC = () => {
+  return (
+    <>
+      <div className="flex items-center mb-2">
+        <Link href="/">
+          <Image width="48" height="48" alt="" src={"/icon.svg"}></Image>
+        </Link>
+        <div className="ml-3">
+          <h1>grams.io</h1>
+          <p>How long do drugs stay in your body?</p>
+        </div>
+      </div>
+      <p className="tagline mt-3">
+        Grams works by calculating the{" "}
+        <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
+          half-life elimination
+        </a>{" "}
+        timeline of ingested drugs. Some drugs (notably alcohol and THC) cannot
+        be accurately modeled this way. All drugs metabolize differently in
+        different people. For example, caffeine&apos;s half-life is 97 hours in
+        infants but only 5 hours in adults.{" "}
+        <b>Research drugs before you consume them</b>. This site is not medical
+        advice. <br />
+        <Link
+          href={
+            "/?i=1h-Caffeine-80000ug-5h&i=2h-Amphetamine-30mg-600min&i=3h-Caffeine-100mg-5h"
+          }
+        >
+          (Example report)
+        </Link>
+      </p>{" "}
+    </>
+  );
+};
+
 const Home: NextPage = () => {
   const router = useRouter();
   // TODO: store the state in the URL
@@ -184,7 +220,7 @@ const Home: NextPage = () => {
     } catch {
       return;
     }
-  }, [ingestions]);
+  }, [ingestions, router]);
 
   const [crosshair, setCrosshair] = useState<
     {
@@ -202,25 +238,25 @@ const Home: NextPage = () => {
     }
   };
 
-  const parseIngestion = (i: ingestion): parsedIngestion => {
-    const dosage = tryParseUnit(i.dosage, "mg");
-    const halfLife = tryParseUnit(i.halfLife, "hours");
-    if (halfLife > 30 * 30) {
-      throw "Half life is too long (the application will crash!)";
-    }
-    const offset = tryParseUnit(i.offset, "hours");
-    return {
-      drugName: i.drugName,
-      dosage: dosage,
-      halfLife: halfLife,
-      offset: offset,
-    };
-  };
-
   const parsedIngestions = useMemo(
     () =>
       ingestions
         .map((ingestion): parsedIngestion | undefined => {
+          const parseIngestion = (i: ingestion): parsedIngestion => {
+            const dosage = tryParseUnit(i.dosage, "mg");
+            const halfLife = tryParseUnit(i.halfLife, "hours");
+            if (halfLife > 30 * 30) {
+              throw "Half life is too long (the application will crash!)";
+            }
+            const offset = tryParseUnit(i.offset, "hours");
+            return {
+              drugName: i.drugName,
+              dosage: dosage,
+              halfLife: halfLife,
+              offset: offset,
+            };
+          };
+
           try {
             return parseIngestion(ingestion);
           } catch (e) {
@@ -305,6 +341,7 @@ const Home: NextPage = () => {
           {Array.from(lines, ([name, line], k) => {
             return (
               <LineSeries
+                key={name}
                 onNearestX={(e, { index }) => {
                   // The first line is responsible for setting the cross for every line.
                   if (k > 0) {
@@ -373,34 +410,7 @@ const Home: NextPage = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col md:container md:mx-auto p-3 md:py-10">
-      <div className="flex items-center mb-2">
-        <Link href="/">
-          <Image width="48px" height="48px" src={"/icon.svg"}></Image>
-        </Link>
-        <div className="ml-3">
-          <h1>grams.io</h1>
-          <p>How long do drugs stay in your body?</p>
-        </div>
-      </div>
-      <p className="tagline mt-3">
-        Grams works by calculating the{" "}
-        <a href={"https://en.wikipedia.org/wiki/Elimination_(pharmacology)"}>
-          half-life elimination
-        </a>{" "}
-        timeline of ingested drugs. Some drugs (notably alcohol and THC) cannot
-        be accurately modeled this way. All drugs metabolize differently in
-        different people. For example, caffeine&apos;s half-life is 97 hours in
-        infants but only 5 hours in adults.{" "}
-        <b>Research drugs before you consume them</b>. This site is not medical
-        advice. <br />
-        <Link
-          href={
-            "/?i=1h-Caffeine-80000ug-5h&i=2h-Amphetamine-30mg-600min&i=3h-Caffeine-100mg-5h"
-          }
-        >
-          (Example report)
-        </Link>
-      </p>
+      <Intro />
       <div id="ingestions" className="container pt-6 px-0">
         <div className={"ingest-container grid gap-4 mb-1"}>
           <span>Offset</span>
@@ -528,19 +538,7 @@ const Home: NextPage = () => {
         <hr className="mb-4 mt-1" />
         {graphData}
       </div>
-      <div className="mt-auto text-center text-md">
-        <a rel="noreferrer" href="email:contact@grams.io" target="_blank">
-          contact@grams.io
-        </a>{" "}
-        | &nbsp;
-        <a
-          rel="noreferrer"
-          href="https://github.com/ammario/grams.io"
-          target="_blank"
-        >
-          View Source
-        </a>
-      </div>
+      <Footer />
     </div>
   );
 };
