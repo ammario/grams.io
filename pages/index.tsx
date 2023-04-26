@@ -19,18 +19,11 @@ import Add from "@mui/icons-material/Add";
 import { CopyAll } from "@mui/icons-material";
 import { Link } from "@mui/material";
 import Footer from "../components/Footer";
-
-interface ingestion {
-  offset: string;
-  drugName: string;
-  dosage: string;
-  halfLife: string;
-  id: string;
-}
+import { Ingestion } from "../components/IngestionInput";
 
 const urlDelimiter = "-";
 
-const encodeIngestionURL = (is: ingestion[]) => {
+const encodeIngestionURL = (is: Ingestion[]) => {
   const params = new URLSearchParams();
   is.forEach((i) => {
     i.offset = i.offset.replace(urlDelimiter, "");
@@ -46,7 +39,7 @@ const encodeIngestionURL = (is: ingestion[]) => {
   return params;
 };
 
-const decodeIngestionURL = (params: URLSearchParams): ingestion[] => {
+const decodeIngestionURL = (params: URLSearchParams): Ingestion[] => {
   return params.getAll("i").map((v) => {
     const tokens = v.split(urlDelimiter);
     return {
@@ -59,7 +52,7 @@ const decodeIngestionURL = (params: URLSearchParams): ingestion[] => {
   });
 };
 
-const emptyIngestion = (): ingestion => {
+const emptyIngestion = (): Ingestion => {
   return {
     offset: "0min",
     drugName: "",
@@ -191,7 +184,7 @@ const Intro: React.FC = () => {
 const Home: NextPage = () => {
   const router = useRouter();
   // TODO: store the state in the URL
-  const [ingestions, setIngestions] = useState<ingestion[]>(() => {
+  const [ingestions, setIngestions] = useState<Ingestion[]>(() => {
     console.log(router.query.toString());
     if (typeof window === "undefined") {
       // I have no idea how to grab URL params within a useState with NextJS.
@@ -242,7 +235,7 @@ const Home: NextPage = () => {
     () =>
       ingestions
         .map((ingestion): parsedIngestion | undefined => {
-          const parseIngestion = (i: ingestion): parsedIngestion => {
+          const parseIngestion = (i: Ingestion): parsedIngestion => {
             const dosage = tryParseUnit(i.dosage, "mg");
             const halfLife = tryParseUnit(i.halfLife, "hours");
             if (halfLife > 30 * 30) {
@@ -420,7 +413,7 @@ const Home: NextPage = () => {
           <span> </span>
         </div>
         {ingestions.map((ingestion, index) => {
-          function edit(editedIngestion: Partial<ingestion>) {
+          function edit(editedIngestion: Partial<Ingestion>) {
             const newIngestions = [...ingestions];
             newIngestions[index] = {
               ...ingestion,
