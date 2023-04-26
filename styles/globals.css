@@ -30,39 +30,48 @@ a {
 }
 
 h1 {
-    font-size: 24px;
-    font-weight: bold;
-    margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0;
 }
 
 p {
-    opacity: 0.64;
-    margin-top: 0px;
-    font-size: 14px;
+  opacity: 0.64;
+  margin-top: 0px;
+  font-size: 14px;
 }
 
 .tagline {
-    opacity: 1;
+  opacity: 1;
 }
 
 h2 {
-    font-size: 16px;
-    opacity: 0.64;
+  font-size: 16px;
+  opacity: 0.64;
 }
 
 th {
-    text-align: left;
+  text-align: left;
 }
 
 .crosshair {
-    background-color: #323232;
-    color: white;
-    opacity: 0.5;
-    border-color: black;
+  background-color: #323232;
+  color: white;
+  opacity: 0.5;
+  border-color: black;
 }
 
 @media (max-width: 640px) {
-    .ingest-container {
-        gap: 0.2rem;
-    }
+  .ingest-container {
+    gap: 0.2rem;
+  }
+}
+
+input[type="checkbox"] {
+  width: 25px;
+}
+
+input.drug-name {
+  border-style: dashed;
+  border-width: 3px;
 }

@@ -438,14 +438,13 @@ const Home: NextPage = () => {
               />
               <input
                 type="text"
-                id="drug-name"
+                className={"drug-name"}
                 list="known-drugs"
                 style={{
                   borderColor:
                     ingestion.drugName === ""
                       ? "rgba(0, 0, 0, 0.07)"
                       : drugColor.hex(ingestion.drugName),
-                  borderWidth: "3px",
                 }}
                 placeholder="Caffeine"
                 value={ingestion.drugName}
