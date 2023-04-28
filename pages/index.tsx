@@ -20,6 +20,8 @@ import IngestionInput, {
 } from "../components/IngestionInput";
 import Footer from "../components/Footer";
 import Intro from "../components/Intro";
+import { SteadyState } from "../components/SteadyState";
+import { tryParseDuration } from "../utils/parse";
 
 const urlDelimiter = "-";
 
@@ -186,25 +188,17 @@ const Home: NextPage = () => {
     }[]
   >();
 
-  const tryParseUnit = (v: string, u: string): number => {
-    try {
-      return unit(v).toNumber(u);
-    } catch {
-      return parseFloat(v);
-    }
-  };
-
   const parsedIngestions = useMemo(
     () =>
       ingestions
         .map((ingestion): parsedIngestion | undefined => {
           const parseIngestion = (i: Ingestion): parsedIngestion => {
-            const dosage = tryParseUnit(i.dosage, "mg");
-            const halfLife = tryParseUnit(i.halfLife, "hours");
+            const dosage = tryParseDuration(i.dosage, "mg");
+            const halfLife = tryParseDuration(i.halfLife, "hours");
             if (halfLife > 30 * 30) {
               throw "Half life is too long (the application will crash!)";
             }
-            const offset = tryParseUnit(i.offset, "hours");
+            const offset = tryParseDuration(i.offset, "hours");
             return {
               drugName: i.drugName,
               dosage: dosage,
@@ -242,8 +236,6 @@ const Home: NextPage = () => {
   });
 
   const graphData = useMemo((): JSX.Element => {
-    console.log("parsedIngestions", parsedIngestions);
-    console.log("normalize dosages?", normalizeDosages);
     const mergedIngestions = new Map<string, parsedIngestion>([]);
     const lines = new Map<string, point[]>([]);
 
@@ -423,8 +415,9 @@ const Home: NextPage = () => {
         </div>
       </div>
       <div id="results" className="container py-2 px-0 flex-1 flex flex-col">
+        <SteadyState />
         <div className="flex">
-          <h2>Results</h2>
+          <h2>Decay graph</h2>
         </div>
         <hr className="mb-4 mt-1" />
         {graphData}
