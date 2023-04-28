@@ -13,6 +13,7 @@ function GramsApp({ Component, pageProps }: AppProps) {
       />
       <Script
         id={"gtag"}
+        async
         dangerouslySetInnerHTML={{
           __html: `
                     window.dataLayer = window.dataLayer || [];
@@ -22,7 +23,7 @@ function GramsApp({ Component, pageProps }: AppProps) {
                     gtag('config', 'G-RZ3SWVWV2J');
                     `,
         }}
-      ></Script>
+      />
       <Head>
         <title>Drug Half-life Calculator – Grams</title>
 
