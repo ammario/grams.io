@@ -76,3 +76,10 @@ input.drug-name {
   border-style: dashed;
   border-width: 3px;
 }
+
+div.inline-input {
+  border: #e5e7eb 2px solid;
+  border-radius: 0.5rem;
+  display: inline;
+  padding: 2px;
+}

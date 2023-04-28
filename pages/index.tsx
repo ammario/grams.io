@@ -20,6 +20,8 @@ import IngestionInput, {
 } from "../components/IngestionInput";
 import Footer from "../components/Footer";
 import Intro from "../components/Intro";
+import { SteadyState } from "../components/SteadyState";
+import { tryParseUnit } from "../utils/parse";
 
 const urlDelimiter = "-";
 
@@ -35,7 +37,6 @@ const encodeIngestionURL = (is: Ingestion[]) => {
       `${i.offset}${urlDelimiter}${i.drugName}${urlDelimiter}${i.dosage}${urlDelimiter}${i.halfLife}`
     );
   });
-  console.log("url encoded as", params.toString());
   return params;
 };
 
@@ -186,14 +187,6 @@ const Home: NextPage = () => {
     }[]
   >();
 
-  const tryParseUnit = (v: string, u: string): number => {
-    try {
-      return unit(v).toNumber(u);
-    } catch {
-      return parseFloat(v);
-    }
-  };
-
   const parsedIngestions = useMemo(
     () =>
       ingestions
@@ -242,8 +235,6 @@ const Home: NextPage = () => {
   });
 
   const graphData = useMemo((): JSX.Element => {
-    console.log("parsedIngestions", parsedIngestions);
-    console.log("normalize dosages?", normalizeDosages);
     const mergedIngestions = new Map<string, parsedIngestion>([]);
     const lines = new Map<string, point[]>([]);
 
@@ -423,8 +414,9 @@ const Home: NextPage = () => {
         </div>
       </div>
       <div id="results" className="container py-2 px-0 flex-1 flex flex-col">
-        <div className="flex">
-          <h2>Results</h2>
+        <SteadyState ingestions={parsedIngestions} />
+        <div className="flex mt-2">
+          <h2>Decay graph</h2>
         </div>
         <hr className="mb-4 mt-1" />
         {graphData}
