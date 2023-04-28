@@ -21,7 +21,7 @@ import IngestionInput, {
 import Footer from "../components/Footer";
 import Intro from "../components/Intro";
 import { SteadyState } from "../components/SteadyState";
-import { tryParseDuration } from "../utils/parse";
+import { tryParseUnit } from "../utils/parse";
 
 const urlDelimiter = "-";
 
@@ -37,7 +37,6 @@ const encodeIngestionURL = (is: Ingestion[]) => {
       `${i.offset}${urlDelimiter}${i.drugName}${urlDelimiter}${i.dosage}${urlDelimiter}${i.halfLife}`
     );
   });
-  console.log("url encoded as", params.toString());
   return params;
 };
 
@@ -193,12 +192,12 @@ const Home: NextPage = () => {
       ingestions
         .map((ingestion): parsedIngestion | undefined => {
           const parseIngestion = (i: Ingestion): parsedIngestion => {
-            const dosage = tryParseDuration(i.dosage, "mg");
-            const halfLife = tryParseDuration(i.halfLife, "hours");
+            const dosage = tryParseUnit(i.dosage, "mg");
+            const halfLife = tryParseUnit(i.halfLife, "hours");
             if (halfLife > 30 * 30) {
               throw "Half life is too long (the application will crash!)";
             }
-            const offset = tryParseDuration(i.offset, "hours");
+            const offset = tryParseUnit(i.offset, "hours");
             return {
               drugName: i.drugName,
               dosage: dosage,
@@ -415,8 +414,8 @@ const Home: NextPage = () => {
         </div>
       </div>
       <div id="results" className="container py-2 px-0 flex-1 flex flex-col">
-        <SteadyState />
-        <div className="flex">
+        <SteadyState ingestions={parsedIngestions} />
+        <div className="flex mt-2">
           <h2>Decay graph</h2>
         </div>
         <hr className="mb-4 mt-1" />

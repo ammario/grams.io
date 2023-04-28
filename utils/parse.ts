@@ -1,6 +1,6 @@
 import { unit } from "mathjs";
 
-export const tryParseDuration = (v: string, u: string): number => {
+export const tryParseUnit = (v: string, u: string): number => {
   try {
     return unit(v).toNumber(u);
   } catch {
