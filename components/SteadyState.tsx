@@ -72,7 +72,7 @@ export const SteadyState: React.FC<{ ingestions: parsedIngestion[] }> = ({
           }
         )}`}
         , with plasma levels fluctuating from{" "}
-        {`${formatMgs(sscMin)} to ${formatMgs(sscMax)} with average
+        {`${formatMgs(sscMin)} to ${formatMgs(sscMax)} and an average
         concentration of ${formatMgs((sscMin + sscMax) / 2)}.`}
         <br /> <br />
         If you quit cold turkey, you will eliminate{" "}
