@@ -64,7 +64,7 @@ export const SteadyState: React.FC<{ ingestions: parsedIngestion[] }> = ({
           html={repeatEvery?.toString() || ""}
           onChange={(e) => setRepeatEvery(e.currentTarget.textContent)}
         />
-        {"h "}
+        {"h, "}
         you will achieve steady-state in{" "}
         {`${doseNumber} doses or ${unit(doseNumber * repeatEvery, "hrs").format(
           {
@@ -72,7 +72,7 @@ export const SteadyState: React.FC<{ ingestions: parsedIngestion[] }> = ({
           }
         )}`}
         , with plasma levels fluctuating from{" "}
-        {`${formatMgs(sscMin)} to ${formatMgs(sscMax)} and an average
+        {`${formatMgs(sscMin)} to ${formatMgs(sscMax)} at an average
         concentration of ${formatMgs((sscMin + sscMax) / 2)}.`}
         <br /> <br />
         If you quit cold turkey, you will eliminate{" "}
@@ -81,7 +81,7 @@ export const SteadyState: React.FC<{ ingestions: parsedIngestion[] }> = ({
           html={threshold.toString()}
           onChange={(e) => setThreshold(e.currentTarget.textContent)}
         />
-        % of the drug in
+        % of residuals in
         {` ${unit(
           eliminatedAfter(ingestion.halfLife, 1 - threshold / 100),
           "hrs"
