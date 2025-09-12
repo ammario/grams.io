@@ -1,6 +1,9 @@
 {
   "name": "grams",
   "private": true,
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
