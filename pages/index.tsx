@@ -169,15 +169,18 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     try {
-      const url = {
-        query: encodeIngestionURL(ingestions).toString(),
-      };
-      router.replace(url, undefined, { shallow: true });
-      console.log("new url", JSON.stringify(url));
+      const newQuery = encodeIngestionURL(ingestions).toString();
+      // Only update if the query actually changed to prevent infinite loops
+      if (router.asPath !== `/${newQuery ? `?${newQuery}` : ''}`) {
+        router.replace({
+          query: newQuery,
+        }, undefined, { shallow: true });
+        console.log("new url", JSON.stringify({ query: newQuery }));
+      }
     } catch {
       return;
     }
-  }, [ingestions, router]);
+  }, [ingestions, router.asPath]);
 
   const [crosshair, setCrosshair] = useState<
     {
