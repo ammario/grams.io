@@ -32,7 +32,6 @@ function GramsApp({ Component, pageProps }: AppProps) {
           name="description"
           content="A half-life calculator that estimates how long a drug is in your body."
         />
-        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </Head>
       <NoSSR>
         <Component {...pageProps} />

@@ -6,7 +6,7 @@ const Intro: React.FC = () => {
     <>
       <div className="flex items-center mb-2">
         <Link href="/">
-          <Image width="48" height="48" alt="" src={"/icon.svg"}></Image>
+          <Image width="48" height="48" alt="" src={"/icon.svg"} priority></Image>
         </Link>
         <div className="ml-3">
           <h1>grams.io</h1>
