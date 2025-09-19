@@ -2,8 +2,9 @@
   "name": "grams",
   "private": true,
   "engines": {
-    "node": "22.x"
+    "bun": ">=1.0.0"
   },
+  "packageManager": "bun@1.2.20",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
