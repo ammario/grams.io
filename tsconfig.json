@@ -6,6 +6,8 @@
     "lib": ["DOM", "ESNext"],
     "strict": true,
     "jsx": "react",
-    "jsxFactory": "h"
+    "jsxFactory": "h",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   }
 }

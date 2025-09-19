@@ -8,10 +8,14 @@
     "build": "npx rspack --config ./rspack.config.mjs --mode production"
   },
   "devDependencies": {
+    "@nivo/core": "^0.99.0",
+    "@nivo/line": "^0.99.0",
     "@rspack/cli": "^1.5.5",
     "@rspack/core": "^1.5.5",
     "css-loader": "^7.1.2",
+    "date-fns": "^4.1.0",
     "html-webpack-plugin": "^5.6.4",
+    "mathjs": "^14.7.0",
     "preact": "^10.27.2",
     "style-loader": "^4.0.0"
   }

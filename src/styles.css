@@ -1,0 +1,67 @@
+@import "./styles/variables.css";
+@import "./styles/common.css";
+
+body {
+  background-color: var(--color-dark-background);
+  color: var(--color-dark-text)
+}
+
+h1 {
+  color: var(--color-dark-heading)
+}
+
+p {
+  font-size: 14px;
+  line-height: 21px;
+  text-align: justify;
+}
+
+a {
+  color: var(--color-blue-300)
+}
+
+nav {
+  padding-top: 2.5rem;
+  padding-bottom: 0.5rem;
+
+  .logo {
+    display: flex;
+    height: 57px;
+    align-items: center;
+
+    img {
+      height: 48px;
+      margin-right: 12px;
+    }
+
+    * {
+      margin: 0
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+
+    h2 {
+      opacity: .8;
+      margin-top: 0;
+      font-size: 14px;
+      font-weight: 400;
+    }
+  }
+}
+
+.ingestion-table {
+  &>div {
+    display: grid;
+    grid-template-columns: .2fr .5fr .2fr .18fr .08fr;
+  }
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+}
+

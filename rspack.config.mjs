@@ -9,6 +9,18 @@ export default defineConfig({
   entry: {
     index: "./src/index.tsx",
   },
+  resolve: {
+    extensions: ['...', '.ts', '.tsx', '.jsx'],
+    extensionAlias: {
+      '.js': ['.ts', '.tsx', '.js'],
+    },
+    alias: {
+      react: 'preact/compat',
+      'react-dom/test-utils': 'preact/test-utils',
+      'react-dom': 'preact/compat', // Must be below test-utils
+      'react/jsx-runtime': 'preact/jsx-runtime',
+    },
+  },
   module: {
     rules: [
       {
@@ -79,7 +91,10 @@ export default defineConfig({
         );
       },
     },
-    new rspack.CssExtractRspackPlugin({})
+    new rspack.CssExtractRspackPlugin({}),
+    new rspack.CopyRspackPlugin({
+      patterns: [{ from: 'src/icon.svg' }],
+    }),
   ],
   devServer: {
     hot: false,
