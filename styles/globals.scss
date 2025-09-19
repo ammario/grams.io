@@ -2,9 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  @apply bg-black text-gray-100;
+}
+
+hr {
+  @apply border-gray-700;
+}
+
 input,
 select {
-  @apply border text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:focus:ring-blue-500 dark:focus:border-blue-500;
+  @apply bg-gray-800 border border-gray-700 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5;
 }
 
 .ingest-container {
@@ -15,31 +23,34 @@ select {
   font-size: 14px;
   opacity: 0.8;
   white-space: nowrap;
+  @apply text-gray-400;
 }
 
 button {
-  @apply py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75;
+  @apply py-2 px-4 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75;
 }
 
 a {
-  @apply text-blue-500;
+  @apply text-blue-400 hover:text-blue-300;
   text-decoration: underline;
 }
 
 .trash {
-  @apply bg-red-500 px-0 md:px-2 hover:bg-red-700;
+  @apply bg-red-600 px-0 md:px-2 hover:bg-red-700;
 }
 
 h1 {
   font-size: 24px;
   font-weight: bold;
   margin: 0;
+  @apply text-gray-100;
 }
 
 p {
-  opacity: 0.64;
+  opacity: 0.8;
   margin-top: 0px;
   font-size: 14px;
+  @apply text-gray-300;
 }
 
 .tagline {
@@ -48,18 +59,19 @@ p {
 
 h2 {
   font-size: 16px;
-  opacity: 0.64;
+  @apply text-gray-400;
 }
 
 th {
   text-align: left;
+  @apply text-gray-300;
 }
 
 .crosshair {
-  background-color: #323232;
+  background-color: #1f2937;
   color: white;
-  opacity: 0.5;
-  border-color: black;
+  opacity: 0.9;
+  border-color: #374151;
 }
 
 @media (max-width: 640px) {
@@ -69,7 +81,39 @@ th {
 }
 
 input[type="checkbox"] {
-  width: 25px;
+  width: 12px;
+  height: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #1f2937; /* gray-800 */
+  border: 1px solid #4b5563; /* gray-600 */
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  margin-right: 5px;
+  vertical-align: middle;
+  margin-bottom: 2px;
+  padding: 5px;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #3b82f6; /* blue-500 */
+  border-color: #3b82f6;
+}
+
+input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+input[type="checkbox"]:hover {
+  border-color: #6b7280; /* gray-500 */
 }
 
 input.drug-name {
@@ -78,8 +122,44 @@ input.drug-name {
 }
 
 div.inline-input {
-  border: #e5e7eb 2px solid;
+  border: #374151 2px solid;
   border-radius: 0.5rem;
   display: inline;
   padding: 2px;
+  @apply bg-gray-800;
+}
+
+/* Chart styles for dark theme */
+.rv-xy-plot {
+  @apply bg-black;
+}
+
+.rv-xy-plot__axis__tick__text {
+  @apply fill-gray-400;
+}
+
+.rv-xy-plot__axis__title text {
+  @apply fill-gray-300;
+}
+
+.rv-xy-plot__grid-lines__line {
+  stroke: #374151;
+  opacity: 0.5;
+}
+
+.rv-xy-plot__axis__line {
+  stroke: #374151;
+  opacity: 0.8;
+}
+
+/* Main axis lines (rulers) */
+.rv-xy-plot__axis--horizontal .rv-xy-plot__axis__line,
+.rv-xy-plot__axis--vertical .rv-xy-plot__axis__line {
+  stroke: #374151; /* gray-700 */
+  opacity: 0.6;
+}
+
+.rv-xy-plot__axis path {
+  stroke: #374151; /* gray-700 */
+  opacity: 0.6;
 }

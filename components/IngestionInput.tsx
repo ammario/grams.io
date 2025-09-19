@@ -10,7 +10,7 @@ export interface Ingestion {
   id: string;
 }
 
-export const DrugColor = new ColorHash({ lightness: 0.5 });
+export const DrugColor = new ColorHash({ lightness: 0.6, saturation: 0.7 });
 
 // export const KnownDrugs: Record<string, string> = {
 //   Amphetamine: "10h",
