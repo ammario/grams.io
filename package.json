@@ -5,7 +5,6 @@
     "node": ">=18.0.0",
     "bun": ">=1.0.0"
   },
-  "packageManager": "bun@1.2.20",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -44,6 +43,7 @@
     "eslint-config-next": "14",
     "postcss": "^8.4.5",
     "tailwindcss": "^3.0.15",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "yaml-loader": "^0.8.1"
   }
 }

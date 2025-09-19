@@ -271,8 +271,14 @@ const Home: NextPage = () => {
       );
     });
 
+    if (lines.size === 0) {
+      lines.set('AddIngestion', [
+        { x: 0, y: 0 },
+      ])
+    }
+
     return (
-      <div className="w-full h-2/3">
+      <div className="w-full" style={{ height: "40vh" }}>
         <div className={"flex max-w-fit"}>
           <input
             checked={normalizeDosages}
@@ -361,6 +367,18 @@ const Home: NextPage = () => {
   return (
     <div className="h-screen w-screen flex flex-col md:container md:mx-auto p-3 md:py-10">
       <Intro />
+
+      <div id="results" className="container py-2 px-0 flex flex-col">
+        <div className="flex mt-2">
+          <h2>Decay graph</h2>
+        </div>
+        <hr className="mb-4 mt-1" />
+        {graphData}
+        <hr className="mb-4 mt-1" />
+
+        <SteadyState ingestions={parsedIngestions} />
+      </div>
+
       <div id="ingestions" className="container pt-6 px-0">
         <div className={"ingest-container grid gap-4 mb-1"}>
           <span>Offset</span>
@@ -415,14 +433,6 @@ const Home: NextPage = () => {
             Copy URL
           </button>
         </div>
-      </div>
-      <div id="results" className="container py-2 px-0 flex-1 flex flex-col">
-        <SteadyState ingestions={parsedIngestions} />
-        <div className="flex mt-2">
-          <h2>Decay graph</h2>
-        </div>
-        <hr className="mb-4 mt-1" />
-        {graphData}
       </div>
 
       <Footer />
