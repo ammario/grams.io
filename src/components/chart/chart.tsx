@@ -1,6 +1,6 @@
 import { h } from "preact";
 import { useMemo } from "preact/hooks";
-import { ResponsiveLine } from "@nivo/line";
+import { useChart } from "./use-chart.ts";
 
 export type ChartData = Record<string, Array<ChartPoint>>;
 
@@ -15,6 +15,12 @@ export type ChartProps = {
 };
 
 export function Chart({ data, height = "40vh" }: ChartProps) {
+  const ResponsiveLine = useChart()
+
+  if (!ResponsiveLine) {
+    return <div style={{ height: height }}></div>;
+  }
+
   const chartData: Array<{ id: string; data: Array<ChartPoint> }> =
     useMemo(() => {
       const chartData = [];
@@ -85,10 +91,10 @@ export function Chart({ data, height = "40vh" }: ChartProps) {
           },
           tooltip: {
             container: {
-              background: 'var(--color-grey-800)',
-              color: 'white'
-            }
-          }
+              background: "var(--color-grey-800)",
+              color: "white",
+            },
+          },
         }}
         pointBorderWidth={2}
         pointBorderColor={{ from: "seriesColor" }}

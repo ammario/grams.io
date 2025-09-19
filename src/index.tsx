@@ -1,13 +1,18 @@
 import "./styles.css";
 import { h, Fragment, render } from "preact";
-import { useState } from "preact/hooks";
-import { Chart, type ChartData } from "./components/chart/chart.tsx";
+import { useEffect, useState } from "preact/hooks";
+import { Chart, ChartData } from "./components/chart/chart.tsx";
 import { Button } from "./components/button/button.tsx";
 import { Input } from "./components/input/input.tsx";
 import { Ingestion } from "./platform/ingestion.ts";
 
 function App() {
-  const [ingestions, setIngestions] = useState<Array<Ingestion>>([]);
+  const [ingestions, setIngestions] = useState<Array<Ingestion>>([
+    // Ingestion.empty().merge({ offset: '0days', drugName: "Test", dosage: "0.2mg", halfLife: "5days" }),
+  ]);
+
+  // Do half life calculations on another thread
+  const chartData = useHalfLifeWorker(ingestions);
 
   function addIngestion(ingestion: Ingestion) {
     setIngestions([...ingestions, ingestion]);
@@ -50,7 +55,7 @@ function App() {
       </section>
 
       <section className="content-max-width">
-        <Chart data={Ingestion.intoChartData(ingestions)} />
+        <Chart data={chartData} />
       </section>
 
       <section className="content-max-width">
@@ -73,17 +78,23 @@ function App() {
               <Input
                 value={ingestion.drugName}
                 placeholder="Caffeine"
-                onInput={(e: any) => updateIngestion(i, { drugName: e.target.value })}
+                onInput={(e: any) =>
+                  updateIngestion(i, { drugName: e.target.value })
+                }
               />
               <Input
                 value={ingestion.dosage}
                 placeholder="80mg"
-                onInput={(e: any) => (updateIngestion(i, { dosage: e.target.value }))}
+                onInput={(e: any) =>
+                  updateIngestion(i, { dosage: e.target.value })
+                }
               />
               <Input
                 value={ingestion.halfLife}
                 placeholder="5h"
-                onInput={(e: any) => (updateIngestion(i, { halfLife: e.target.value }))}
+                onInput={(e: any) =>
+                  updateIngestion(i, { halfLife: e.target.value })
+                }
               />
               <Button onClick={() => removeIngestion(i)}>X</Button>
             </div>
@@ -102,3 +113,25 @@ function App() {
 }
 
 render(<App />, document.body);
+
+const url = "./worker.js";
+const worker = new Worker(url);
+
+function useHalfLifeWorker(ingestions: Array<Ingestion>): ChartData {
+  const [chartData, setChartData] = useState<ChartData>({});
+
+  // Do half life calculation on another thread
+  useEffect(() => {
+    let id = Math.round(Math.random() * 10000);
+    let fn = (event: MessageEvent & { data: [number, ChartData] }) => {
+      if (id !== event.data[0]) return;
+      setChartData(event.data[1]);
+      worker.removeEventListener("message", fn);
+    };
+    worker.addEventListener("message", fn);
+    worker.postMessage([id, ingestions]);
+    return () => worker.removeEventListener("message", fn);
+  }, [ingestions]);
+
+  return chartData;
+}

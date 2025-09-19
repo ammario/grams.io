@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ["preact"]
+    branches: ["main"]
 
   workflow_dispatch:
 
@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "preact"
+  group: "main"
   cancel-in-progress: true
 
 env:

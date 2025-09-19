@@ -5,9 +5,18 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 export default defineConfig({
   experiments: {
     css: true,
+    outputModule: true,
   },
   entry: {
     index: "./src/index.tsx",
+    worker: "./src/worker.ts",
+  },
+  output: {
+    filename: '[name].js',
+    module: true,
+    chunkFormat: 'module',
+    chunkLoading: 'import',
+    workerChunkLoading: 'import',
   },
   resolve: {
     extensions: ['...', '.ts', '.tsx', '.jsx'],
@@ -93,7 +102,10 @@ export default defineConfig({
     },
     new rspack.CssExtractRspackPlugin({}),
     new rspack.CopyRspackPlugin({
-      patterns: [{ from: 'src/icon.svg' }],
+      patterns: [
+        { from: 'src/icon.svg' },
+        { from: 'src/robots.txt' },
+      ],
     }),
   ],
   devServer: {
@@ -108,5 +120,8 @@ export default defineConfig({
         value: "no-store",
       },
     ],
+    devMiddleware: {
+      writeToDisk: true
+    }
   },
 });
