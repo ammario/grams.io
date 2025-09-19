@@ -1,0 +1,29 @@
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  font-family: Inter var, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  box-sizing: content-box;
+}
+
+*:active,
+*:focus {
+  outline: none;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 1200px) {
+  .content-max-width {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 1199px) {
+  .content-max-width {
+    margin: 0 3%;
+  }
+}
